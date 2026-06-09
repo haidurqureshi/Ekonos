@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
                 })
             }
         );
-    } catch (_err) {
+    } catch {
         return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
     }
 
