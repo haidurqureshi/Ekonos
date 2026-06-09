@@ -37,7 +37,7 @@ export default function Home() {
                     Log In
                 </button>
                 <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                    Don't have an account?{" "}
+                    don&apos;t have an account?{" "}
                     <a href="/signup" className="text-[#65e2b9] hover:underline">
                         Sign up
                     </a>
