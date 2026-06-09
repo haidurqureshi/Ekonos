@@ -19,6 +19,10 @@ export default function SignupPage() {
             setError("Passwords do not match");
             return;
         }
+        if(!name || !email || !password){
+            setError("All fields are required");
+            return;
+        }
 
         fetch("/api/signup", {
             method: "POST",

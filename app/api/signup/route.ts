@@ -1,17 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import argon2 from 'argon2';
+import bcrypt from "bcryptjs";
 
 export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, email, password } = body;
 
     // Hash password
-    let passwordHash: string;
-    try {
-        passwordHash = await argon2.hash(password);
-    } catch (err) {
-        return NextResponse.json({ success: false, error: 'Error hashing password' }, { status: 500 });
-    }
+    const salt = bcrypt.genSaltSync(10);
+    const passwordHash = bcrypt.hashSync(password, salt);
 
     // Store in D1
     try {
