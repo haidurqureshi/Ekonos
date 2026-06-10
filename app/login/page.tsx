@@ -33,7 +33,7 @@ export default function LoginPage() {
                 return response.json();
             })
             .then(() => {
-                router.push("/");
+                router.push("/dashboard");
             })
             .catch((error) => {
                 setError(error.message);
