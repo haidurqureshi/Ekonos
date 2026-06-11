@@ -3,14 +3,17 @@ import { jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
 import Image from "next/image";
 
+// Server Action for logout
+async function logout() {
+    'use server';
+    const cookieStore = await cookies();
+    cookieStore.delete('token');
+    redirect('/login');
+}
+
 export default async function Dashboard() {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
-
-    const handleSubmit = (e: React.FormEvent) => {
-            cookieStore.delete('token');
-            redirect('/login');
-    }
 
     if (!token) {
         redirect('/login');
@@ -46,16 +49,19 @@ export default async function Dashboard() {
 
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-            <p onClick={handleSubmit} className="cursor-pointer">
-                Logout
-            </p>
+            {/* Server Action bound to a form — works in Server Components */}
+            <form action={logout}>
+                <button type="submit" className="cursor-pointer">
+                    Logout
+                </button>
+            </form>
             <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
-                <Image 
-                src="/EKONOS.svg" 
-                alt="EKONOS logo" 
-                width={100} 
-                height={100} 
-                priority 
+                <Image
+                    src="/EKONOS.svg"
+                    alt="EKONOS logo"
+                    width={100}
+                    height={100}
+                    priority
                 />
                 <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
                     <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
