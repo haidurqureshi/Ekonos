@@ -1,9 +1,6 @@
 name = "ekonos"
-account_id = ""
 workers_dev = true
 compatibility_date = "2026-06-14"
 main = "src/index.ts"
-route = ""
 
-# Before deploying, fill in account_id and route if needed.
 # If you use a custom build step, configure it in the Cloudflare stack or install Wrangler v3.
