@@ -2,23 +2,14 @@ import { cookies } from 'next/headers';
 import { jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
 import Image from "next/image";
-
-// Server Action for logout
-async function logout() {
-    'use server';
-    const cookieStore = await cookies();
-    cookieStore.delete('token');
-    redirect('/login');
-}
+import HamburgerMenu from './HamburgerMenu';
 
 export default async function Dashboard() {
-    const cookieStore = await cookies();
+    /*const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
-    if (!token) {
-        redirect('/login');
-    }
-
+    if (!token) redirect('/dashboard');
+    
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     let payload;
     try {
@@ -28,13 +19,12 @@ export default async function Dashboard() {
         redirect('/login');
     }
 
-    // Fetch name from D1
     const res = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
         {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.CF_API_TOKEN_READ}`,
+                'Authorization': `Bearer ${process.env.CF_API_TOKEN}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -46,15 +36,11 @@ export default async function Dashboard() {
     );
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
-
+    */
+    const name = "User"; // Placeholder for demonstration purposes
     return (
-        <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-            {/* Server Action bound to a form — works in Server Components */}
-            <form action={logout}>
-                <button type="submit" className="cursor-pointer">
-                    Logout
-                </button>
-            </form>
+        <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black relative">
+            <HamburgerMenu />
             <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
                 <Image
                     src="/EKONOS.svg"
