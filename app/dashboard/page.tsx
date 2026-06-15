@@ -5,7 +5,7 @@ import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
 
 export default async function Dashboard() {
-    /*const cookieStore = await cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
@@ -36,8 +36,7 @@ export default async function Dashboard() {
     );
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
-    */
-    const name = "User"; // Placeholder for demonstration purposes
+    
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black relative">
             <HamburgerMenu />
