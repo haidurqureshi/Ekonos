@@ -1,5 +1,8 @@
 import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+import { redirect } from 'next/navigation';
 
 export default async function Dashboard() {
     const cookieStore = await cookies();
