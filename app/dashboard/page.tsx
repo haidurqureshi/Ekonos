@@ -1,11 +1,8 @@
 import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import { redirect } from 'next/navigation';
 
 export default async function Dashboard() {
-    const cookieStore = await cookies();
+    /*const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
@@ -24,7 +21,7 @@ export default async function Dashboard() {
         {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.CF_API_TOKEN_READ}`,
+                'Authorization': `Bearer ${process.env.CF_API_TOKEN}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -36,15 +33,20 @@ export default async function Dashboard() {
     );
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
+    
+    */
    const d = new Date();
-    const day = d.getDate();
+    let day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
+   const name = "User"; // Placeholder for demonstration purposes
+    const total_spent = 0; // Placeholder for demonstration purposes
+    const budget = 0; // Placeholder for demonstration purposes not 0 will break!!!!
+    let percentage_spent;
+    percentage_spent = budget ? (total_spent / budget) * 100 : 0;
 
-    const total_spent = 297; // Placeholder for demonstration purposes
-    const budget = 1000; // Placeholder for demonstration purposes
-    const percentage_spent = (total_spent / budget) * 100; // Placeholder for demonstration purposes
-    const adjusted_percentage_spent = percentage_spent / (day / days);
-    const remaining_budget = budget - total_spent;
+    
+    let adjusted_percentage_spent = percentage_spent / (day / days);
+    let remaining_budget = budget - total_spent;
     let budgetInfoColor = "text-green-500";
     let budgetInfoBgColor = "bg-green-500";
     if (adjusted_percentage_spent > 100) {
@@ -57,7 +59,7 @@ export default async function Dashboard() {
         budgetInfoColor = "text-green-500";
         budgetInfoBgColor = "bg-green-500";
     }
-    const ethics =69;//placeholder
+    let ethics = 100;//placeholder
     let ethical_colour = "text-red-500";
     let ethical_border_colour = "border-red-500";
     if (ethics>=75){
@@ -67,10 +69,10 @@ export default async function Dashboard() {
         ethical_colour="text-yellow-500";
         ethical_border_colour = "border-yellow-500";
     }
-    const placeholder_text= "Most spending aligns with your values. Your score would rise by 6 points if shopping purchases shifted away from Shell."
-    const shopping_ethics = 78;
-    const transport_ethics  = 9;
-    const other_ethics = 54;
+    let placeholder_text= "Perfect. Keep Doing what Your Doing."
+    let shopping_ethics = 100;
+    let transport_ethics  = 100;
+    let other_ethics = 100;
     let shopping_ethics_colour;
     let transport_ethics_colour;
     let other_ethics_colour;
