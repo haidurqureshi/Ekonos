@@ -2,7 +2,7 @@ import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
 
 export default async function Dashboard() {
-    /*const cookieStore = await cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
@@ -34,11 +34,11 @@ export default async function Dashboard() {
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
     
-    */
+    
    const d = new Date();
-    let day = d.getDate();
+    const day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
-   const name = "User"; // Placeholder for demonstration purposes
+    // Placeholder for demonstration purposes
     const total_spent = 0; // Placeholder for demonstration purposes
     const budget = 0; // Placeholder for demonstration purposes not 0 will break!!!!
     let percentage_spent;
@@ -59,7 +59,7 @@ export default async function Dashboard() {
         budgetInfoColor = "text-green-500";
         budgetInfoBgColor = "bg-green-500";
     }
-    let ethics = 100;//placeholder
+    const ethics = 100;//placeholder
     let ethical_colour = "text-red-500";
     let ethical_border_colour = "border-red-500";
     if (ethics>=75){
@@ -69,10 +69,10 @@ export default async function Dashboard() {
         ethical_colour="text-yellow-500";
         ethical_border_colour = "border-yellow-500";
     }
-    let placeholder_text= "Perfect. Keep Doing what Your Doing."
-    let shopping_ethics = 100;
-    let transport_ethics  = 100;
-    let other_ethics = 100;
+    const placeholder_text= "Perfect. Keep Doing what Your Doing."
+    const shopping_ethics = 100;
+    const transport_ethics  = 100;
+    const other_ethics = 100;
     let shopping_ethics_colour;
     let transport_ethics_colour;
     let other_ethics_colour;
