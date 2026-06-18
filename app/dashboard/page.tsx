@@ -44,8 +44,8 @@ export default async function Dashboard() {
     // Placeholder for demonstration purposes
     const total_spent = 0; // Placeholder for demonstration purposes
     const budget = 0; // Placeholder for demonstration purposes not 0 will break!!!!
-    let percentage_spent;
-    percentage_spent = budget ? (total_spent / budget) * 100 : 0;
+    
+    const percentage_spent = budget ? (total_spent / budget) * 100 : 0;
 
     
     const adjusted_percentage_spent = percentage_spent / (day / days);
