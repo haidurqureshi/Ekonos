@@ -37,14 +37,14 @@ export default async function Dashboard() {
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
    const d = new Date();
-    let day = d.getDate();
+    const day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
 
     const total_spent = 297; // Placeholder for demonstration purposes
     const budget = 1000; // Placeholder for demonstration purposes
     const percentage_spent = (total_spent / budget) * 100; // Placeholder for demonstration purposes
-    let adjusted_percentage_spent = percentage_spent / (day / days);
-    let remaining_budget = budget - total_spent;
+    const adjusted_percentage_spent = percentage_spent / (day / days);
+    const remaining_budget = budget - total_spent;
     let budgetInfoColor = "text-green-500";
     let budgetInfoBgColor = "bg-green-500";
     if (adjusted_percentage_spent > 100) {
@@ -57,7 +57,7 @@ export default async function Dashboard() {
         budgetInfoColor = "text-green-500";
         budgetInfoBgColor = "bg-green-500";
     }
-    let ethics =69;//placeholder
+    const ethics =69;//placeholder
     let ethical_colour = "text-red-500";
     let ethical_border_colour = "border-red-500";
     if (ethics>=75){
@@ -67,10 +67,10 @@ export default async function Dashboard() {
         ethical_colour="text-yellow-500";
         ethical_border_colour = "border-yellow-500";
     }
-    let placeholder_text= "Most spending aligns with your values. Your score would rise by 6 points if shopping purchases shifted away from Shell."
-    let shopping_ethics = 78;
-    let transport_ethics  = 9;
-    let other_ethics = 54;
+    const placeholder_text= "Most spending aligns with your values. Your score would rise by 6 points if shopping purchases shifted away from Shell."
+    const shopping_ethics = 78;
+    const transport_ethics  = 9;
+    const other_ethics = 54;
     let shopping_ethics_colour;
     let transport_ethics_colour;
     let other_ethics_colour;
