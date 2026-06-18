@@ -1,5 +1,8 @@
 import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
+import { cookies } from 'next/headers';
+import { jwtVerify } from 'jose';
+import { redirect } from 'next/navigation';
 
 export default async function Dashboard() {
     const cookieStore = await cookies();
@@ -45,8 +48,8 @@ export default async function Dashboard() {
     percentage_spent = budget ? (total_spent / budget) * 100 : 0;
 
     
-    let adjusted_percentage_spent = percentage_spent / (day / days);
-    let remaining_budget = budget - total_spent;
+    const adjusted_percentage_spent = percentage_spent / (day / days);
+    const remaining_budget = budget - total_spent;
     let budgetInfoColor = "text-green-500";
     let budgetInfoBgColor = "bg-green-500";
     if (adjusted_percentage_spent > 100) {
