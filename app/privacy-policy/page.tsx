@@ -32,7 +32,7 @@ export default async function Privacy() {
               Registered company: HaidurQureshi Ltd
               <br />Trading as: Ekonos
               <br />Website: ekonos.co.uk
-              <br />Contact email: haidur@haidurqureshi.com
+              <br />Contact email: privacy-policy@ekonos.co.uk
             </p>
             <p className="text-base leading-8 text-zinc-600 dark:text-zinc-400">
               We are the controller of your personal data. This privacy notice explains what information we collect, how we use it, and your rights under UK data protection law.
@@ -122,7 +122,7 @@ export default async function Privacy() {
               <li>Right to withdraw consent — you can withdraw consent at any time.</li>
             </ul>
             <p className="text-base leading-8 text-zinc-600 dark:text-zinc-400">
-              To exercise any of these rights, email us at haidur@haidurqureshi.com. We will respond within one month.
+              To exercise any of these rights, email us at privacy-policy@ekonos.co.uk. We will respond within one month.
             </p>
           </section>
 
@@ -139,7 +139,7 @@ export default async function Privacy() {
           <section className="space-y-4">
             <h2 className="text-xl font-semibold text-black dark:text-zinc-50">Changes to this privacy notice</h2>
             <p className="text-base leading-8 text-zinc-600 dark:text-zinc-400">
-              If you have concerns about how we handle your data, please contact us first at haidur@haidurqureshi.com.
+              If you have concerns about how we handle your data, please contact us first at privacy-policy@ekonos.co.uk.
             </p>
             <p className="text-base leading-8 text-zinc-600 dark:text-zinc-400">
               If you remain unhappy after contacting us, you can complain to the ICO:
