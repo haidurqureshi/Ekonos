@@ -37,7 +37,6 @@ export default async function Dashboard() {
    const d = new Date();
     let day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
-   const name = "User"; // Placeholder for demonstration purposes
     const total_spent = 297; // Placeholder for demonstration purposes
     const budget = 1000; // Placeholder for demonstration purposes
     const percentage_spent = (total_spent / budget) * 100; // Placeholder for demonstration purposes
