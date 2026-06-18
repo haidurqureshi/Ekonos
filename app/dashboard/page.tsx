@@ -2,7 +2,7 @@ import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
 
 export default async function Dashboard() {
-    const cookieStore = await cookies();
+    /*const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
@@ -33,10 +33,11 @@ export default async function Dashboard() {
     );
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
-    
+    */
    const d = new Date();
     let day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
+   const name = "User"; // Placeholder for demonstration purposes
     const total_spent = 297; // Placeholder for demonstration purposes
     const budget = 1000; // Placeholder for demonstration purposes
     const percentage_spent = (total_spent / budget) * 100; // Placeholder for demonstration purposes
