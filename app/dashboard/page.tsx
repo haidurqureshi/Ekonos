@@ -1,12 +1,10 @@
 import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { jwtVerify } from "jose";
 
+import { Router } from "next/router";
 
 export default async function Dashboard() {
-    const cookieStore = await cookies();
+    /*const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
@@ -54,19 +52,20 @@ export default async function Dashboard() {
         }
     );
     const transactions_data = await transactions.json();
-    const total_spent = transactions_data.result?.[0]?.results?.reduce((sum: number, t: any) => sum + (t.amount || 0), 0) || 0;
+    const total_spent = transactions_data.result?.[0]?.results?.reduce((sum: number, t: { amount?: number }) => sum + (t.amount || 0), 0) || 0;
     const budget = data.result?.[0]?.results?.[0]?.budget || 0;
     const ethics = data.result?.[0]?.results?.[0]?.ethical_score || 100;
     const shopping_ethics = data.result?.[0]?.results?.[0]?.shopping_ethics || 100;
     const transport_ethics = data.result?.[0]?.results?.[0]?.transport_ethics || 100;
     const other_ethics = data.result?.[0]?.results?.[0]?.other_ethics || 100;
 
+    */
    const d = new Date();
     const day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
-   // Placeholder for demonstration purposes
-     // Placeholder for demonstration purposes
-    // Placeholder for demonstration purposes not 0 will break!!!!
+   const name = "User"; // Placeholder for demonstration purposes
+    const total_spent = 0; // Placeholder for demonstration purposes
+    const budget = 0; // Placeholder for demonstration purposes not 0 will break!!!!
     const percentage_spent =  budget ? (total_spent / budget) * 100 : 0;
     
 
@@ -85,7 +84,7 @@ export default async function Dashboard() {
         budgetInfoColor = "text-green-500";
         budgetInfoBgColor = "bg-green-500";
     }
-    
+    const ethics = 100;//placeholder
     let ethical_colour = "text-red-500";
     let ethical_border_colour = "border-red-500";
     if (ethics>=75){
@@ -96,7 +95,9 @@ export default async function Dashboard() {
         ethical_border_colour = "border-yellow-500";
     }
     const placeholder_text= "Perfect. Keep Doing what Your Doing."
-
+    const shopping_ethics = 100;
+    const transport_ethics  = 100;
+    const other_ethics = 100;
     let shopping_ethics_colour;
     let transport_ethics_colour;
     let other_ethics_colour;
