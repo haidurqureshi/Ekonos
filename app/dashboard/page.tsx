@@ -1,10 +1,12 @@
 import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
-
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { jwtVerify } from "jose";
 import { Router } from "next/router";
 
 export default async function Dashboard() {
-    /*const cookieStore = await cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
@@ -36,7 +38,7 @@ export default async function Dashboard() {
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
     
-    */
+    
    const d = new Date();
     const day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
