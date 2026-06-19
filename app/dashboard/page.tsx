@@ -25,7 +25,7 @@ export default async function Dashboard() {
         {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${process.env.CF_API_TOKEN}`,
+                'Authorization': `Bearer ${process.env.CF_API_TOKEN_READ}`,
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
