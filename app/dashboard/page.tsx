@@ -1,11 +1,10 @@
 import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
-import { cookies } from 'next/headers';
-import { jwtVerify } from 'jose';
-import { redirect } from 'next/navigation';
+
+import { Router } from "next/router";
 
 export default async function Dashboard() {
-    const cookieStore = await cookies();
+    /*const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
@@ -37,15 +36,15 @@ export default async function Dashboard() {
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
     
-    
+    */
    const d = new Date();
     const day = d.getDate();
    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
-    // Placeholder for demonstration purposes
+   const name = "User"; // Placeholder for demonstration purposes
     const total_spent = 0; // Placeholder for demonstration purposes
     const budget = 0; // Placeholder for demonstration purposes not 0 will break!!!!
+    const percentage_spent =  budget ? (total_spent / budget) * 100 : 0;
     
-    const percentage_spent = budget ? (total_spent / budget) * 100 : 0;
 
     
     const adjusted_percentage_spent = percentage_spent / (day / days);
@@ -103,27 +102,29 @@ export default async function Dashboard() {
     } else{
         other_ethics_colour = "bg-red-500";
     }
+    
    return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black relative">
-            <div className="w-full max-w-3xl flex items-center py-15 px-16 bg-white dark:bg-black sm:items-start relative">
-                <div className="flex items-center gap-4 justify-start flex-start">
-                        <HamburgerMenu />
-                        <Image
-                            src="/EKONOS.svg"
-                            alt="EKONOS logo"
-                            width={50}
-                            height={40}
-                            className="absolute top-1"
-                            priority
-                        />
+            <div className="w-full max-w-3xl flex items-center justify-between py-4 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black">
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <HamburgerMenu />
+                    <Image
+                        src="/EKONOS.svg"
+                        alt="EKONOS logo"
+                        width={50}
+                        height={50}
+                        priority
+                        className="w-10 h-10 sm:w-[50px] sm:h-[50px]"
+                    />
                 </div>
-                <p className="absolute top-4 right-4 text-1xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50 whitespace-nowrap">
+                <p className="text-base sm:text-1xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50 whitespace-nowrap">
                     Welcome, {name}!
                 </p>
             </div>
-            <main className="flex flex-1 w-full max-w-4xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
-                <div className="flex flex-row gap-4 justify-between w-full">
-                    <div id="budget-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+            <main className="flex flex-1 w-full max-w-4xl flex-col items-center justify-between py-8 sm:py-15 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black sm:items-start">
+                <div className="flex flex-col sm:flex-row gap-4 justify-between w-full cursor-default">
+                    <div id="budget-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]" >
+                    <a href="/edit-budget">
                         <div className="text-xs font-medium text-zinc-500">Spent This Month</div>
                         <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{total_spent}</div>
                         <div className="text-xs text-zinc-500">Out of £{budget}</div>
@@ -136,20 +137,21 @@ export default async function Dashboard() {
                         <div className="text-xs text-zinc-500">
                             {Math.min(percentage_spent, 100).toFixed(0)}% of budget used
                         </div>
+                    </a>
                     </div>
-                    <div id="remaining-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+                    <div id="remaining-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
                         <div className="text-xs font-medium text-zinc-500">Remaining Budget</div>
                         <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{remaining_budget}</div>
                         <div className="text-xs text-zinc-500">{days-day} days left</div>
                     </div>
-                    <div id="ethical-score" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+                    <div id="ethical-score" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
                         <div className="text-xs font-medium text-zinc-500">Ethical Score</div>
                         <div className={`text-2xl font-bold ${ethical_colour}`}>{ethics}</div>
                         <div className="text-xs text-zinc-500">out of 100</div>
                     </div>
                 </div>
-                <div className="flex flex-row gap-4 justify-between w-full">
-                    <div id="ethical-breakdown" className="mt-4 w-full p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 w-full mt-4 cursor-default">
+                    <div id="ethical-breakdown" className="mt-4 w-full p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
                         <p>Your Ethical Breakdown</p>
                         <div className="flex gap-3 max-w-xl">
                             <div className={`flex items-center justify-center w-14 h-14 rounded-full border-4 ${ethical_border_colour} text-base font-medium ${ethical_colour} flex-shrink-0`}>{ethics}</div>
@@ -183,7 +185,7 @@ export default async function Dashboard() {
                             </div>
                         </div>
                     </div>
-                    <div id="transactions" className="mt-4 w-full p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900">
+                    <div id="transactions" className="mt-4 w-full p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
                         <p>Past Transactions</p>
                     </div>
                 </div>
