@@ -1,7 +1,5 @@
 import Image from "next/image";
 import HamburgerMenu from './HamburgerMenu';
-import Image from "next/image";
-import HamburgerMenu from './HamburgerMenu';
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
