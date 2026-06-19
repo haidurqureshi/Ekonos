@@ -3,7 +3,7 @@ import HamburgerMenu from './HamburgerMenu';
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
-import { Router } from "next/router";
+
 
 export default async function Dashboard() {
     const cookieStore = await cookies();
