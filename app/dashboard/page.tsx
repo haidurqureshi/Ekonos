@@ -35,7 +35,7 @@ export default async function Dashboard() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                sql: 'SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE id = ?',
+                sql: 'SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ?',
                 params: [payload.id]
             }),
             cache: 'no-store'
@@ -43,7 +43,7 @@ export default async function Dashboard() {
     );
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
-    const public_id = data.result?.[0]?.results?.[0]?.public_id;
+    const public_id = payload.id;
     const transactions = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
         {
