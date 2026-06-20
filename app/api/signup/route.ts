@@ -46,5 +46,5 @@ export async function POST(request: NextRequest) {
         sameSite: 'strict',
         maxAge: 60 * 60 * 24 * 7 // 7 days
     });
-    return NextResponse.json({ success: true });
+    return response;
 }
