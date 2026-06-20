@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     // Hash password
     const salt = bcrypt.genSaltSync(10);
     const passwordHash = bcrypt.hashSync(password, salt);
-
+    const uuid = uuidv4();
     // Store in D1
     try {
         await fetch(
@@ -22,49 +22,18 @@ export async function POST(request: NextRequest) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    sql: 'INSERT INTO users (name, email, password, user_id) VALUES (?, ?, ?, ?)',
-                    params: [name, email, passwordHash, uuidv4()]
+                    sql: 'INSERT INTO users (name, email, password, public_id) VALUES (?, ?, ?, ?)',
+                    params: [name, email, passwordHash, uuid]
                 })
             }
         );
     } catch{
         return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
     }
-
     // Get user from D1
-    let user;
-    try {
-        const res = await fetch(
-            `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${process.env.CF_API_TOKEN_READ}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    sql: 'SELECT id, email, password FROM users WHERE email = ?',
-                    params: [email]
-                })
-            }
-        );
-        const data = await res.json();
-        user = data.result?.[0]?.results?.[0];
-    } catch {
-        return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
-    }
-
-    if (!user) {
-        return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
-    }
-
-    if (!bcrypt.compareSync(password, user.password)) {
-        return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
-    }
-
     // Create JWT
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ id: user.id, email: user.email })
+    const token = await new SignJWT({ id: uuid, email: email })
         .setProtectedHeader({ alg: 'HS256' })
         .setExpirationTime('7d')
         .sign(secret);
