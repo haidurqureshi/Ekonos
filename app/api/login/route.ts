@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    sql: 'SELECT id, email, password FROM users WHERE email = ?',
+                    sql: 'SELECT id, email, password, public_id FROM users WHERE email = ?',
                     params: [email]
                 })
             }
