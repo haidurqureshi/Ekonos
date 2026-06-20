@@ -1,5 +1,5 @@
 import Image from "next/image";
-import HamburgerMenu from './HamburgerMenu';
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
@@ -129,7 +129,7 @@ export default async function Dashboard() {
     } else{
         other_ethics_colour = "bg-red-500";
     }
-    let open = false;
+    
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black relative">
             <div className="w-full max-w-3xl flex items-center justify-between py-4 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black">
