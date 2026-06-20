@@ -4,13 +4,20 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 
+async function logout() {
+    "use server"
+    const cookieStore = await cookies();
+    cookieStore.delete('token');
+    redirect('/login');
+}
 
 export default async function Dashboard() {
+    
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
     if (!token) redirect('/dashboard');
-    
+
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     let payload;
     try {
@@ -47,31 +54,33 @@ export default async function Dashboard() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                sql: 'SELECT amount FROM transactions WHERE public_id = ?',
+                sql: 'SELECT amount FROM transactions WHERE user_id = ?',
                 params: [public_id]
             }),
             cache: 'no-store'
         }
     );
+
     const transactions_data = await transactions.json();
     const total_spent = transactions_data.result?.[0]?.results?.reduce((sum: number, t: { amount?: number }) => sum + (t.amount || 0), 0) || 0;
     const budget = data.result?.[0]?.results?.[0]?.budget || 0;
     const ethics = data.result?.[0]?.results?.[0]?.ethical_score || 100;
     const shopping_ethics = data.result?.[0]?.results?.[0]?.shopping_ethics || 100;
     const transport_ethics = data.result?.[0]?.results?.[0]?.transport_ethics || 100;
-    const other_ethics = data.result?.[0]?.results?.[0]?.other_ethics || 100
-   const d = new Date();
+    const other_ethics = data.result?.[0]?.results?.[0]?.other_ethics || 100;
+
+    const d = new Date();
     const day = d.getDate();
-   const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
+    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
     // Placeholder for demonstration purposes not 0 will break!!!!
     const percentage_spent =  budget ? (total_spent / budget) * 100 : 0;
-    
 
-    
+
+
     const adjusted_percentage_spent = percentage_spent / (day / days);
     const remaining_budget = budget - total_spent;
-    let budgetInfoColor = "text-green-500";
-    let budgetInfoBgColor = "bg-green-500";
+    let budgetInfoColor = "text-[#65e2b9]";
+    let budgetInfoBgColor = "bg-[#65e2b9]";
     if (adjusted_percentage_spent > 100) {
         budgetInfoColor = "text-red-500";
         budgetInfoBgColor = "bg-red-500";
@@ -79,15 +88,15 @@ export default async function Dashboard() {
         budgetInfoColor = "text-yellow-500";
         budgetInfoBgColor = "bg-yellow-500";
     } else if (adjusted_percentage_spent > 50) {
-        budgetInfoColor = "text-green-500";
-        budgetInfoBgColor = "bg-green-500";
+        budgetInfoColor = "text-[#65e2b9]";
+        budgetInfoBgColor = "bg-[#65e2b9]";
     }
-    
+
     let ethical_colour = "text-red-500";
     let ethical_border_colour = "border-red-500";
     if (ethics>=75){
-        ethical_colour= "text-green-500";
-        ethical_border_colour = "border-green-500";
+        ethical_colour= "text-[#65e2b9]";
+        ethical_border_colour = "border-[#65e2b9]";
     } else if(ethics >=38){
         ethical_colour="text-yellow-500";
         ethical_border_colour = "border-yellow-500";
@@ -98,7 +107,7 @@ export default async function Dashboard() {
     let other_ethics_colour;
 
     if(shopping_ethics>70){
-        shopping_ethics_colour = "bg-green-500";
+        shopping_ethics_colour = "bg-[#65e2b9]";
     } else if(shopping_ethics>30){
         shopping_ethics_colour = "bg-yellow-500";
     } else{
@@ -106,7 +115,7 @@ export default async function Dashboard() {
     }
     transport_ethics_colour = "bg-red-500";
     if(transport_ethics>70){
-        transport_ethics_colour = "bg-green-500";
+        transport_ethics_colour = "bg-[#65e2b9]";
     } else if(transport_ethics>30){
         transport_ethics_colour = "bg-yellow-500";
     } else{
@@ -114,18 +123,43 @@ export default async function Dashboard() {
     }
 
     if(other_ethics>70){
-        other_ethics_colour = "bg-green-500";
+        other_ethics_colour = "bg-[#65e2b9]";
     } else if(other_ethics>30){
         other_ethics_colour = "bg-yellow-500";
     } else{
         other_ethics_colour = "bg-red-500";
     }
-    
-   return (
+    let open = false;
+    return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black relative">
             <div className="w-full max-w-3xl flex items-center justify-between py-4 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black">
                 <div className="flex items-center gap-2 sm:gap-4">
-                    <HamburgerMenu />
+                    <div className="relative group">
+                        {/* The button catches the focus when clicked */}
+                        <button aria-label="Open Menu" className="focus:outline-none">
+                            <Image
+                                src="/hamburger.svg"
+                                alt="hamburger menu"
+                                className="dark:invert"
+                                width={30}
+                                height={30}
+                                priority
+                            />
+                        </button>
+                        
+                        {/* CSS handles visibility using opacity and pointer-events */}
+                        <div className="absolute top-10 left-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-md p-4 flex flex-col gap-3 w-48 z-10 
+                                        opacity-0 pointer-events-none transition-opacity duration-150
+                                        group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
+                            <form action={logout}>
+                                <button type="submit" className="text-sm text-zinc-700 dark:text-zinc-300 hover:text-[#65e2b9]">
+                                    Log out
+                                </button>
+                            </form>
+                            <a href="/add-item" className="text-sm text-zinc-700 dark:text-zinc-300 hover:text-[#65e2b9]">Add Payment</a>
+                        </div>
+                    </div>
+
                     <Image
                         src="/EKONOS.svg"
                         alt="EKONOS logo"
