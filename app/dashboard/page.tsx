@@ -12,7 +12,6 @@ async function logout() {
 }
 
 export default async function Dashboard() {
-    
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
@@ -44,7 +43,7 @@ export default async function Dashboard() {
     );
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
-    const public_id = payload.id;
+    const public_id = data.result?.[0]?.results?.[0]?.public_id;
     const transactions = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
         {
@@ -68,7 +67,7 @@ export default async function Dashboard() {
     const shopping_ethics = data.result?.[0]?.results?.[0]?.shopping_ethics || 100;
     const transport_ethics = data.result?.[0]?.results?.[0]?.transport_ethics || 100;
     const other_ethics = data.result?.[0]?.results?.[0]?.other_ethics || 100;
-
+    
     const d = new Date();
     const day = d.getDate();
     const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
@@ -129,7 +128,6 @@ export default async function Dashboard() {
     } else{
         other_ethics_colour = "bg-red-500";
     }
-    
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black relative">
             <div className="w-full max-w-3xl flex items-center justify-between py-4 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black">
@@ -176,7 +174,7 @@ export default async function Dashboard() {
             <main className="flex flex-1 w-full max-w-4xl flex-col items-center justify-between py-8 sm:py-15 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black sm:items-start">
                 <div className="flex flex-col sm:flex-row gap-4 justify-between w-full cursor-default">
                     <div id="budget-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]" >
-                    <a href="/edit-budget">
+                    <a href="/add-transaction">
                         <div className="text-xs font-medium text-zinc-500">Spent This Month</div>
                         <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{total_spent}</div>
                         <div className="text-xs text-zinc-500">Out of £{budget}</div>
@@ -191,16 +189,20 @@ export default async function Dashboard() {
                         </div>
                     </a>
                     </div>
-                    <div id="remaining-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
-                        <div className="text-xs font-medium text-zinc-500">Remaining Budget</div>
-                        <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{remaining_budget}</div>
-                        <div className="text-xs text-zinc-500">{days-day} days left</div>
-                    </div>
-                    <div id="ethical-score" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
-                        <div className="text-xs font-medium text-zinc-500">Ethical Score</div>
-                        <div className={`text-2xl font-bold ${ethical_colour}`}>{ethics}</div>
-                        <div className="text-xs text-zinc-500">out of 100</div>
-                    </div>
+                    <a href="/edit-budget">
+                        <div id="remaining-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
+                            <div className="text-xs font-medium text-zinc-500">Remaining Budget</div>
+                            <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{remaining_budget}</div>
+                            <div className="text-xs text-zinc-500">{days-day} days left</div>
+                        </div>
+                    </a>
+                    <a href="/ethical-breakdown">
+                        <div id="ethical-score" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
+                            <div className="text-xs font-medium text-zinc-500">Ethical Score</div>
+                            <div className={`text-2xl font-bold ${ethical_colour}`}>{ethics}</div>
+                            <div className="text-xs text-zinc-500">out of 100</div>
+                        </div>
+                    </a>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 w-full mt-4 cursor-default">
                     <div id="ethical-breakdown" className="mt-4 w-full p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
