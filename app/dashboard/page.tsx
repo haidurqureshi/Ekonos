@@ -44,7 +44,7 @@ export default async function Dashboard() {
     );
     const data = await res.json();
     const name = data.result?.[0]?.results?.[0]?.name;
-    const public_id = data.result?.[0]?.results?.[0]?.public_id;
+    const public_id = payload.id;
     const transactions = await fetch(
         `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
         {
