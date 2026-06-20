@@ -15,7 +15,7 @@ export default async function Dashboard() {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
 
-    if (!token) redirect('/dashboard');
+    if (!token) redirect('/');
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     let payload;
