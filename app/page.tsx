@@ -3,6 +3,13 @@ import { cookies } from "next/dist/server/request/cookies";
 import Image from "next/image";
 import Link from "next/link";
 
+export const metadata = {
+  metadataBase: new URL("https://ekonos.co.uk"),
+  alternates: {
+    canonical: "/",
+  },
+};
+
 export default async function Home() {
   const cookieStore = await cookies();
   const token = cookieStore.get('token')?.value;
@@ -13,7 +20,6 @@ export default async function Home() {
   
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <link rel="canonical" href="https://ekonos.co.uk"></link>
       <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
         <Link href="/" aria-label="Ekonos Logo">
           <Image
