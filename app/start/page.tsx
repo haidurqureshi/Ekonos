@@ -44,7 +44,6 @@ export default function SignupPage() {
                 setError(error.message);
             });
     };
-
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
             <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
@@ -86,7 +85,21 @@ export default function SignupPage() {
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
                     />
+                    <div>
+                        <input type="checkbox" required/>
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                            I accept the {" "}
+                            <a href="/privacy-policy" className="text-[#65e2b9] hover:underline">
+                                privacy policy
+                            </a>
+                            {" "} and the {" "}
+                            <a href="/terms-of-service" className="text-[#65e2b9] hover:underline">
+                                terms of service
+                            </a>
+                        </p>
+                    </div>
                     {error && <p className="text-sm text-red-500">{error}</p>}
+
                     <button
                         type="submit"
                         className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px] mt-4"
