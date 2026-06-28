@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    sql: 'INSERT INTO transactions (user_id, company_name, amount, category, ethical_score) VALUES (?, ?, ?, ?)',
+                    sql: 'INSERT INTO transactions (user_id, company_name, amount, category, ethical_score) VALUES (?, ?, ?, ?, ?)',
                     params: [user_id, brand, price, category, ethical_score]
                 })
             }
