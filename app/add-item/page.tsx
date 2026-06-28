@@ -16,7 +16,7 @@ export default function SignupPage() {
         e.preventDefault();
         setError(null);
         
-        if(!brand || !price  || !ethical_score){
+        if(!brand || !price  || !ethical_score || !category){
             setError("All fields are required");
             return;
         }
@@ -72,15 +72,12 @@ export default function SignupPage() {
                         required
                         className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
                     />
-                    <select
-                        value={category}
-                        onChange={(e) => SetCategory(e.target.value)}
-                        className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
-                    >
-                        <option>Transport</option>
-                        <option>Shopping</option>
-                        <option>Other</option>
-                    </select>
+                    <select value={category} onChange={(e) => SetCategory(e.target.value)} required>
+    <option value="" disabled>Select category</option>
+    <option value="Transport">Transport</option>
+    <option value="Shopping">Shopping</option>
+    <option value="Other">Other</option>
+</select>
                     <input
                         type="number"
                         placeholder="Ethical Score"
