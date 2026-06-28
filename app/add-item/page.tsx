@@ -65,7 +65,7 @@ export default function SignupPage() {
                         type="number"
                         placeholder="Price"
                         min = "0.00"
-                        max= "Infinity"
+                        
                         step={0.01}
                         value={price}
                         onChange={(e) => SetPrice(e.target.value)}
