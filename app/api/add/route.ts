@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
         if (!insertRes.ok) {
             return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
         }
-        return NextResponse.json({ success: true}, { status: 204 });
+        return NextResponse.json({ success: true}, { status: 201 });
     } catch (err) {
         console.error(err);
         return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
