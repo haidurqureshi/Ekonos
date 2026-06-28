@@ -63,7 +63,7 @@ export default async function Dashboard() {
     const transactions_data = await transactions.json();
     const total_spent = transactions_data.result?.[0]?.results?.reduce((sum: number, t: { amount?: number }) => sum + (t.amount || 0), 0) || 0;
     const budget = data.result?.[0]?.results?.[0]?.budget || 0;
-    const ethics = Mat.round((data.result?.[0]?.results?.[0]?.ethical_score)*100)/100 || 100;
+    const ethics = Mat.round((data.result?.[0]?.results?.[0]?.ethical_score)) || 100;
     const shopping_ethics = data.result?.[0]?.results?.[0]?.shopping_ethics || 100;
     const transport_ethics = data.result?.[0]?.results?.[0]?.transport_ethics || 100;
     const other_ethics = data.result?.[0]?.results?.[0]?.other_ethics || 100;
