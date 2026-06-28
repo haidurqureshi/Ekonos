@@ -100,7 +100,7 @@ export default async function Dashboard() {
         ethical_colour="text-yellow-500";
         ethical_border_colour = "border-yellow-500";
     }
-    const placeholder_text= "Perfect. Keep Doing what Your Doing."
+    const placeholder_text= "Generating Ethical Feedback..."
     let shopping_ethics_colour;
     let transport_ethics_colour;
     let other_ethics_colour;
