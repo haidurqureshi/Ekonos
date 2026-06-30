@@ -9,20 +9,6 @@ export default function SignupPage() {
     const [budget, SetPrice] = useState("");
     const [timescale, SetCategory] = useState("");
     const [error, setError] = useState<string | null>(null);
-    let adjusted_budget : number = Number(budget);
-
-    switch(timescale){
-        case "Daily":
-            adjusted_budget = adjusted_budget * 365 / 12;
-        case "Weekly":
-            adjusted_budget = adjusted_budget / 7 * 365 / 12; 
-        case "Monthly":
-            adjusted_budget = adjusted_budget; 
-        case "Yearly":
-            adjusted_budget = adjusted_budget / 12;
-
-        
-    }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -31,6 +17,22 @@ export default function SignupPage() {
         if(!timescale || !budget ){
             setError("All fields are required");
             return;
+        }
+
+        let adjusted_budget = Number(budget);
+
+        switch (timescale) {
+            case "Daily":
+                adjusted_budget = adjusted_budget * 365 / 12;
+                break;
+            case "Weekly":
+                adjusted_budget = adjusted_budget / 7 * 365 / 12;
+                break;
+            case "Monthly":
+                break;
+            case "Yearly":
+                adjusted_budget = adjusted_budget / 12;
+                break;
         }
 
         fetch("/api/budget", {
