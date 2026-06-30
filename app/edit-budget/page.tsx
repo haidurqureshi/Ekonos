@@ -42,7 +42,7 @@ export default function SignupPage() {
         })
             .then((response) => {
                 if (!response.ok) {
-                    throw new Error("Failed to add transaction");
+                    throw new Error("Failed to add budget");
                 }
                 return response.json();
             })
