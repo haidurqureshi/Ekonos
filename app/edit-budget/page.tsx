@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { time } from "console";
+
 
 export default function SignupPage() {
     const router = useRouter();
