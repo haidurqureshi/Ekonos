@@ -38,7 +38,7 @@ export default function SignupPage() {
                 return response.json();
             })
             .then(() => {
-                router.push("/");
+                router.push("/edit-budget");
             })
             .catch((error) => {
                 setError(error.message);
