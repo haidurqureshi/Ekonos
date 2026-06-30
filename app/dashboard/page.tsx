@@ -70,7 +70,7 @@ export default async function Dashboard() {
     
     const d = new Date();
     const day = d.getDate();
-    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate()
+    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate();
     // Placeholder for demonstration purposes not 0 will break!!!!
     const percentage_spent =  budget ? (total_spent / budget) * 100 : 0;
 
@@ -194,7 +194,7 @@ export default async function Dashboard() {
                     <a href="/edit-budget">
                         <div className="text-xs font-medium text-zinc-500">Remaining Budget</div>
                         <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{remaining_budget}</div>
-                        <div className="text-xs text-zinc-500">{days-day} days left</div>
+                        <div className="text-xs text-zinc-500">{days-day + 1} days left</div>
                     </a>
                     </div>
                     <div id="ethical-score" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200  rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
