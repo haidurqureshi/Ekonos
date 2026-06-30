@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { cookies } from "next/headers";
+
 
 export default function SignupPage() {
     const router = useRouter();
@@ -12,10 +12,7 @@ export default function SignupPage() {
     const [category, SetCategory] = useState("");
     const [ethical_score, SetEthical_Score] = useState("");
     const [error, setError] = useState<string | null>(null);
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
 
-    if (!token) redirect('/');
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
