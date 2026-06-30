@@ -11,7 +11,10 @@ export default function SignupPage() {
     const [category, SetCategory] = useState("");
     const [ethical_score, SetEthical_Score] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const cookieStore = await cookies();
+    const token = cookieStore.get('token')?.value;
 
+    if (!token) redirect('/');
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -20,6 +23,7 @@ export default function SignupPage() {
             setError("All fields are required");
             return;
         }
+        
 
         fetch("/api/add", {
             method: "POST",
