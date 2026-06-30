@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers: d1Headers,
             body: JSON.stringify({
-                sql: 'INSERT INTO users (budget) VALUES (?) WHERE public_id = ?',
-                params: [adjusted_budget, user_id]
+            sql: 'UPDATE users SET budget = ? WHERE public_id = ?',
+            params: [adjusted_budget, user_id]
             })
         });
 
