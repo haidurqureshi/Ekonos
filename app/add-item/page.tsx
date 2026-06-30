@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { cookies } from "next/headers";
 
 export default function SignupPage() {
     const router = useRouter();
