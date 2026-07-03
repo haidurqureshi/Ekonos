@@ -35,7 +35,7 @@ export default async function Dashboard() {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                sql: 'SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ?',
+                sql: 'SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ? AND created_at >= date("now", "start of month")',
                 params: [payload.id]
             }),
             cache: 'no-store'
