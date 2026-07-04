@@ -46,7 +46,7 @@ export default function RootLayout({
               <a href="/our-ethical-principles" className="text-sm text-zinc-600 dark:text-zinc-400 hover:underline">
                 Our Ethical Principles
               </a>
-              <a href="/contact" className="text-sm text-zinc-600 dark:text-zinc-400 hover:underline">
+              <a href="https://forms.gle/73AvFfMHRRXmkDnU7" className="text-sm text-zinc-600 dark:text-zinc-400 hover:underline">
                 Contact Us
               </a>
               <a href="/about-us" className="text-sm text-zinc-600 dark:text-zinc-400 hover:underline">
