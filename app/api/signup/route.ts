@@ -44,6 +44,11 @@ export async function POST(request: NextRequest) {
         const passwordHash = bcrypt.hashSync(password, salt);
         const uuid = uuidv4();
 
+        console.log("CF_ACCOUNT_ID", process.env.CF_ACCOUNT_ID);
+        console.log("CF_D1_ID", process.env.CF_D1_ID);
+        console.log("READ TOKEN", !!process.env.CF_API_TOKEN_READ);
+        console.log("JWT", !!process.env.JWT_SECRET);
+        
         // Store in D1
         const insertRes = await fetch(
             `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
