@@ -10,7 +10,7 @@ async function logout() {
     cookieStore.delete('token');
     redirect('/login');
 }
-
+//HELLLO THIS IS JUST SO CLOUDFLARE REDEPLOYS THE WEBSITE SINCE I DONT KNOW HOW TO
 export default async function Dashboard() {
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value;
