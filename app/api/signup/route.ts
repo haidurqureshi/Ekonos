@@ -87,6 +87,12 @@ export async function POST(request: NextRequest) {
 
     } catch (err) {
         console.error(err);
-        return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+        return NextResponse.json({
+  CF_ACCOUNT_ID: process.env.CF_ACCOUNT_ID,
+  CF_D1_ID: process.env.CF_D1_ID,
+  HAS_READ_TOKEN: !!process.env.CF_API_TOKEN_READ,
+  HAS_WRITE_TOKEN: !!process.env.CF_API_TOKEN,
+  HAS_JWT: !!process.env.JWT_SECRET,
+});
     }
 }
