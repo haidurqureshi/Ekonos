@@ -4,8 +4,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { SignJWT } from 'jose';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-
-
 interface SignupBody {
     name: string;
     email: string;
@@ -30,7 +28,7 @@ export async function POST(request: NextRequest) {
         let insertResult;
         try {
             insertResult = await db
-                .prepare('INSERT INTO users (name, email, password, public_id) VALUES (?, ?, ?, ?)')
+                .prepare('INSERT INTO users (name, email, password_hash, public_id) VALUES (?, ?, ?, ?)')
                 .bind(name, email, passwordHash, uuid)
                 .run();
         } catch (dbErr: unknown) {
@@ -38,7 +36,7 @@ export async function POST(request: NextRequest) {
             if (message.includes('UNIQUE constraint failed')) {
                 return NextResponse.json({ success: false, error: 'Email taken' }, { status: 409 });
             }
-            return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
+            return NextResponse.json({ success: false, error: message }, { status: 500 });
         }
 
         if (!insertResult.success) {
@@ -60,7 +58,8 @@ export async function POST(request: NextRequest) {
         });
         return response;
 
-    } catch {
-        return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }
