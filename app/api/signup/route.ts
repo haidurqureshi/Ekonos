@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { SignJWT } from 'jose';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-export const runtime = 'edge';
+
 
 interface SignupBody {
     name: string;
