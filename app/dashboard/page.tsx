@@ -3,12 +3,29 @@ import Image from "next/image";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+
+export const runtime = 'edge';
 
 async function logout() {
     "use server"
     const cookieStore = await cookies();
     cookieStore.delete('token');
     redirect('/login');
+}
+
+interface UserRow {
+    name: string;
+    public_id: string;
+    budget: number;
+    ethical_score: number;
+    shopping_ethics: number;
+    transport_ethics: number;
+    other_ethics: number;
+}
+
+interface TransactionRow {
+    amount: number;
 }
 
 export default async function Dashboard() {
@@ -18,56 +35,37 @@ export default async function Dashboard() {
     if (!token) redirect('/');
 
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    let payload;
+    let userId: string;
     try {
-        const { payload: p } = await jwtVerify(token, secret);
-        payload = p;
+        const { payload } = await jwtVerify(token, secret);
+        userId = payload.id as string;
     } catch {
         redirect('/login');
     }
 
-    const res = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
-        {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${process.env.CF_API_TOKEN_READ}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                sql: 'SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ? ',
-                params: [payload.id]
-            }),
-            cache: 'no-store'
-        }
-    );
-    const data = await res.json();
-    const name = data.result?.[0]?.results?.[0]?.name;
-    const public_id = payload.id;
-    const transactions = await fetch(
-        `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
-        {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${process.env.CF_API_TOKEN_READ}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                sql: 'SELECT amount FROM transactions WHERE user_id = ? AND created_at >= date("now", "start of month")',
-                params: [public_id]
-            }),
-            cache: 'no-store'
-        }
-    );
+    const { env } = getCloudflareContext();
+    const db = env.Ekonos;
 
-    const transactions_data = await transactions.json();
-    const total_spent = transactions_data.result?.[0]?.results?.reduce((sum: number, t: { amount?: number }) => sum + (t.amount || 0), 0) || 0;
-    const budget = data.result?.[0]?.results?.[0]?.budget || 0;
-    const ethics = Math.round((data.result?.[0]?.results?.[0]?.ethical_score)) || 100;
-    const shopping_ethics = data.result?.[0]?.results?.[0]?.shopping_ethics || 100;
-    const transport_ethics = data.result?.[0]?.results?.[0]?.transport_ethics || 100;
-    const other_ethics = data.result?.[0]?.results?.[0]?.other_ethics || 100;
-    
+    const user = await db
+        .prepare('SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ?')
+        .bind(userId!)
+        .first<UserRow>();
+
+    const name = user?.name;
+    const public_id = userId!;
+
+    const transactionsResult = await db
+        .prepare('SELECT amount FROM transactions WHERE user_id = ? AND created_at >= date("now", "start of month")')
+        .bind(public_id)
+        .all<TransactionRow>();
+
+    const total_spent = transactionsResult.results?.reduce((sum: number, t: TransactionRow) => sum + (t.amount || 0), 0) || 0;
+    const budget = user?.budget || 0;
+    const ethics = Math.round(user?.ethical_score ?? 0) || 100;
+    const shopping_ethics = user?.shopping_ethics || 100;
+    const transport_ethics = user?.transport_ethics || 100;
+    const other_ethics = user?.other_ethics || 100;
+
     const d = new Date();
     const day = d.getDate();
     const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate();
