@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-export const runtime = 'edge';
 
 async function logout() {
     "use server"
