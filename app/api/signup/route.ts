@@ -11,45 +11,22 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Missing fields' }, { status: 400 });
     }
 
+    // Basic format checks
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return NextResponse.json({ success: false, error: 'Invalid email' }, { status: 400 });
+    }
+    if (password.length < 8) {
+        return NextResponse.json({ success: false, error: 'Password must be at least 8 characters' }, { status: 400 });
+    }
+
     try {
-        // Check if email already exists
-        const checkRes = await fetch(
-            `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${process.env.CF_API_TOKEN_READ}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    sql: 'SELECT id FROM users WHERE email = ?',
-                    params: [email]
-                })
-            }
-        );
-
-        if (!checkRes.ok) {
-            return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
-        }
-
-        const checkData = await checkRes.json();
-        const rows = checkData?.result?.[0]?.results ?? [];
-
-        if (rows.length > 0) {
-            return NextResponse.json({ success: false, error: 'Email taken' }, { status: 409 });
-        }
-
-        // Hash password
-        const salt = bcrypt.genSaltSync(10);
-        const passwordHash = bcrypt.hashSync(password, salt);
+        // Hash password (async, non-blocking)
+        const passwordHash = await bcrypt.hash(password, 10);
         const uuid = uuidv4();
 
-        console.log("CF_ACCOUNT_ID", process.env.CF_ACCOUNT_ID);
-        console.log("CF_D1_ID", process.env.CF_D1_ID);
-        console.log("READ TOKEN", !!process.env.CF_API_TOKEN_READ);
-        console.log("JWT", !!process.env.JWT_SECRET);
-        
-        // Store in D1
+        // Insert directly, relying on a UNIQUE constraint on email
+        // to catch duplicates atomically instead of check-then-insert.
         const insertRes = await fetch(
             `https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ACCOUNT_ID}/d1/database/${process.env.CF_D1_ID}/query`,
             {
@@ -66,6 +43,23 @@ export async function POST(request: NextRequest) {
         );
 
         if (!insertRes.ok) {
+            const errText = await insertRes.text();
+            // D1 surfaces constraint violations in the error message,
+            // e.g. "UNIQUE constraint failed: users.email"
+            if (errText.includes('UNIQUE constraint failed')) {
+                return NextResponse.json({ success: false, error: 'Email taken' }, { status: 409 });
+            }
+            console.error('D1 insert error:', errText);
+            return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
+        }
+
+        const insertData = await insertRes.json();
+        if (!insertData?.success) {
+            const message = insertData?.errors?.[0]?.message ?? '';
+            if (message.includes('UNIQUE constraint failed')) {
+                return NextResponse.json({ success: false, error: 'Email taken' }, { status: 409 });
+            }
+            console.error('D1 insert failed:', insertData);
             return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
         }
 
@@ -87,12 +81,6 @@ export async function POST(request: NextRequest) {
 
     } catch (err) {
         console.error(err);
-        return NextResponse.json({
-  CF_ACCOUNT_ID: process.env.CF_ACCOUNT_ID,
-  CF_D1_ID: process.env.CF_D1_ID,
-  HAS_READ_TOKEN: !!process.env.CF_API_TOKEN_READ,
-  HAS_WRITE_TOKEN: !!process.env.CF_API_TOKEN,
-  HAS_JWT: !!process.env.JWT_SECRET,
-});
+        return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
     }
 }
