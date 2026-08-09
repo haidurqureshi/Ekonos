@@ -9,11 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.2",
+    "@stripe/stripe-js": "^9.8.0",
     "bcryptjs": "^3.0.3",
     "jose": "^6.2.3",
-    "next": "15.3.3",
+    "next": "^15.5.19",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "stripe": "^22.3.0",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
@@ -25,6 +28,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.120.0"
   }
 }
