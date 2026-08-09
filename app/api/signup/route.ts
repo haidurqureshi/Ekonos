@@ -6,8 +6,14 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 
 export const runtime = 'edge';
 
+interface SignupBody {
+    name: string;
+    email: string;
+    password: string;
+}
+
 export async function POST(request: NextRequest) {
-    const body = await request.json();
+    const body = await request.json() as SignupBody;
     const { name, email, password } = body;
 
     if (!name || !email || !password) {
