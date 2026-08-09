@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { SignJWT } from 'jose';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-export const runtime = 'edge';
+
 
 interface LoginBody {
     email: string;
