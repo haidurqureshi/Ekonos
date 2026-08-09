@@ -59,7 +59,7 @@ export default async function Dashboard() {
         .all<TransactionRow>();
 
     const total_spent = transactionsResult.results?.reduce((sum: number, t: TransactionRow) => sum + (t.amount || 0), 0) || 0;
-    const budget = (Math.floor((user?.budget)*100))/100 || 0;
+    const budget = Math.floor((user?.budget ?? 0) * 100) / 100;
     const ethics = Math.round(user?.ethical_score ?? 0) || 100;
     const shopping_ethics = user?.shopping_ethics || 100;
     const transport_ethics = user?.transport_ethics || 100;
