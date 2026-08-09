@@ -1,6 +1,0 @@
-name = "ekonos"
-workers_dev = true
-compatibility_date = "2026-06-14"
-main = "src/index.ts"
-
-# If you use a custom build step, configure it in the Cloudflare stack or install Wrangler v3.
