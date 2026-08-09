@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
                 .prepare('INSERT INTO users (name, email, password, public_id) VALUES (?, ?, ?, ?)')
                 .bind(name, email, passwordHash, uuid)
                 .run();
-        } catch (dbErr: any) {
-            const message = dbErr?.message ?? String(dbErr);
+        } catch (dbErr: unknown) {
+            const message = dbErr instanceof Error ? dbErr.message : String(dbErr);
             if (message.includes('UNIQUE constraint failed')) {
                 return NextResponse.json({ success: false, error: 'Email taken' }, { status: 409 });
             }
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
         });
         return response;
 
-    } catch (err) {
+    } catch {
         return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
     }
 }
