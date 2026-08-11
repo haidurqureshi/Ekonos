@@ -4,8 +4,6 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-
-
 interface AddBody {
     brand: string;
     price: number;
@@ -49,18 +47,19 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
         }
 
-        // 2. Recalculate this user's ethics averages
+        // 2. Recalculate this user's per-category ethics averages.
+        // ethical_score is NOT set here — it's a GENERATED column derived
+        // automatically from these three, so writing to it directly errors.
         const updateResult = await db
             .prepare(
                 `UPDATE users
                  SET
-                   ethical_score    = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ?),
                    shopping_ethics  = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Shopping'),
                    transport_ethics = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Transport'),
                    other_ethics     = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Other')
                  WHERE public_id = ?`
             )
-            .bind(userId!, userId!, userId!, userId!, userId!)
+            .bind(userId!, userId!, userId!, userId!)
             .run();
 
         if (!updateResult.success) {
