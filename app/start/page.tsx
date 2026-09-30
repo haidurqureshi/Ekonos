@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 
 export default function SignupPage() {
     const router = useRouter();
+
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -31,10 +32,17 @@ export default function SignupPage() {
             headers: {
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({ name, email, password }),
+            body: JSON.stringify({
+                name,
+                email,
+                password,
+            }),
         })
             .then(async (response) => {
-                const data = await response.json();
+                const data: {
+                    success?: boolean;
+                    error?: string;
+                } = await response.json();
 
                 if (!response.ok) {
                     throw new Error(
@@ -59,6 +67,7 @@ export default function SignupPage() {
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
             <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
+
                 <Image
                     src="/EKONOS.svg"
                     alt="EKONOS logo"
@@ -120,7 +129,10 @@ export default function SignupPage() {
                     />
 
                     <div>
-                        <input type="checkbox" required />
+                        <input
+                            type="checkbox"
+                            required
+                        />
 
                         <p className="text-sm text-zinc-600 dark:text-zinc-400">
                             I accept the{" "}
