@@ -1,65 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from "bcryptjs";
+import bcrypt from 'bcryptjs';
 import { SignJWT } from 'jose';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-
-
 interface LoginBody {
-    email: string;
-    password: string;
+    email?: string;
+    password?: string;
 }
 
 interface UserRow {
     id: number;
     email: string;
-    password: string;
+    password_hash: string;
     public_id: string;
 }
 
-export async function POST(request: NextRequest) {
-    const body = await request.json() as LoginBody;
-    const { email, password } = body;
+const fail = (error: string, status: number) =>
+    NextResponse.json({ success: false, error }, { status });
 
-    if (!email || !password) {
-        return NextResponse.json({ success: false, error: 'Missing fields' }, { status: 400 });
+// Computed once per isolate, used to equalize timing when the email isn't found
+let dummyHash: Promise<string> | undefined;
+
+export async function POST(request: NextRequest) {
+    let body: LoginBody;
+    try {
+        body = await request.json();
+    } catch {
+        return fail('Invalid JSON', 400);
     }
 
+    const email = body.email?.trim().toLowerCase();
+    const password = body.password;
+
+    if (!email || !password) return fail('Missing fields', 400);
+    if (email.length > 254 || password.length > 128) return fail('Invalid credentials', 401);
+
     let user: UserRow | null;
+    let jwtSecret: string | undefined;
     try {
         const { env } = getCloudflareContext();
-        const db = env.Ekonos;
+        jwtSecret = (env as unknown as Record<string, string | undefined>).JWT_SECRET
+            ?? process.env.JWT_SECRET;
 
-        user = await db
-            .prepare('SELECT id, email, password, public_id FROM users WHERE email = ?')
+        user = await env.Ekonos
+            .prepare('SELECT id, email, password_hash, public_id FROM users WHERE email = ?')
             .bind(email)
             .first<UserRow>();
     } catch (err) {
-        console.error(err);
-        return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
+        console.error('Login DB error:', err);
+        return fail('Database error', 500);
+    }
+
+    if (!jwtSecret) {
+        console.error('JWT_SECRET is not configured');
+        return fail('Server misconfigured', 500);
     }
 
     if (!user) {
-        return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
+        dummyHash ??= bcrypt.hash('dummy-password', 10);
+        await bcrypt.compare(password, await dummyHash);
+        return fail('Invalid credentials', 401);
     }
 
-    const passwordMatches = await bcrypt.compare(password, user.password);
-    if (!passwordMatches) {
-        return NextResponse.json({ success: false, error: 'Invalid credentials' }, { status: 401 });
-    }
+    const passwordMatches = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatches) return fail('Invalid credentials', 401);
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const token = await new SignJWT({ id: user.public_id, email: user.email })
+    const token = await new SignJWT({ email: user.email })
         .setProtectedHeader({ alg: 'HS256' })
+        .setSubject(user.public_id)
+        .setIssuedAt()
         .setExpirationTime('7d')
-        .sign(secret);
+        .sign(new TextEncoder().encode(jwtSecret));
 
     const response = NextResponse.json({ success: true });
     response.cookies.set('token', token, {
         httpOnly: true,
         secure: true,
-        sameSite: 'strict',
-        maxAge: 60 * 60 * 24 * 7
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
     });
     return response;
 }
