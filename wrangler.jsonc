@@ -11,7 +11,7 @@
   "d1_databases": [
     {
       "binding": "Ekonos",
-      "database_name": "Ekonos",
+      "database_name": "ekonos",
       "database_id": "83b631fd-1b7c-4bb0-8e6c-e199649fd61e"
     }
   ]
