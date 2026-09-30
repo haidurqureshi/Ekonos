@@ -1,54 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-
-
+import { fail, getUserId } from '@/lib/auth';
 
 interface BudgetBody {
-    adjusted_budget: number;
+    adjusted_budget?: unknown;
 }
 
+const MAX_BUDGET = 1_000_000_000;
+
 export async function POST(request: NextRequest) {
-    const body = await request.json() as BudgetBody;
-    const { adjusted_budget } = body;
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-    if (!token) redirect('/');
-
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    let userId: string;
     try {
-        const { payload } = await jwtVerify(token, secret);
-        userId = payload.id as string;
-    } catch {
-        redirect('/login');
-    }
+        const userId = await getUserId(request);
+        if (!userId) return fail('Unauthorized', 401);
 
-    if (!adjusted_budget) {
-        return NextResponse.json({ success: false, error: 'Missing fields' }, { status: 400 });
-    }
-
-    try {
-        const { env } = getCloudflareContext();
-        const db = env.Ekonos;
-
-        const updateResult = await db
-            .prepare('UPDATE users SET budget = ? WHERE public_id = ?')
-            .bind(adjusted_budget, userId!)
-            .run();
-
-        if (!updateResult.success) {
-            console.error('Update failed:', updateResult);
-            return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
+        let body: BudgetBody;
+        try {
+            body = await request.json();
+        } catch {
+            return fail('Invalid JSON', 400);
         }
 
-        return NextResponse.json({ success: true }, { status: 201 });
+        const budget = body.adjusted_budget;
+        if (
+            typeof budget !== 'number' ||
+            !Number.isFinite(budget) ||
+            budget < 0 ||
+            budget > MAX_BUDGET
+        ) {
+            return fail('Invalid budget', 400);
+        }
 
+        const { env } = getCloudflareContext();
+        const result = await env.Ekonos
+            .prepare('UPDATE users SET budget = ? WHERE public_id = ?')
+            .bind(budget, userId)
+            .run();
+
+        if (result.meta.changes === 0) return fail('User not found', 404);
+
+        return NextResponse.json({ success: true });
     } catch (err) {
-        console.error(err);
-        return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+        console.error('Budget update error:', err);
+        return fail('Server error', 500);
     }
 }
