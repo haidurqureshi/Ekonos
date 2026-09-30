@@ -15,48 +15,72 @@ export default function SignupPage() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
+
         if (password !== confirmPassword) {
             setError("Passwords do not match");
             return;
         }
-        if(!name || !email || !password){
+
+        if (!name || !email || !password) {
             setError("All fields are required");
             return;
         }
 
         fetch("/api/signup", {
-    method: "POST",
-    headers: {
-        "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ name, email, password }),
-})
-    .then(async (response) => {
-        const data = await response.json();
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ name, email, password }),
+        })
+            .then(async (response) => {
+                const data = await response.json();
 
-        if (!response.ok) {
-            throw new Error(data.error || "Failed to create account");
-        }
+                if (!response.ok) {
+                    throw new Error(
+                        data.error || "Failed to create account"
+                    );
+                }
 
-        return data;
-    })
-    .then(() => {
-        router.push("/edit-budget");
-    })
-    .catch((error) => {
-        setError(error instanceof Error ? error.message : "Failed to create account");
-    });
+                return data;
+            })
+            .then(() => {
+                router.push("/edit-budget");
+            })
+            .catch((error) => {
+                setError(
+                    error instanceof Error
+                        ? error.message
+                        : "Failed to create account"
+                );
+            });
+    };
+
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
             <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
-                <Image src="/EKONOS.svg" alt="EKONOS logo" width={100} height={100} priority />
+                <Image
+                    src="/EKONOS.svg"
+                    alt="EKONOS logo"
+                    width={100}
+                    height={100}
+                    priority
+                />
+
                 <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
                     <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
                         Welcome to Ekonos Signup Page
                     </h1>
-                    <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">Create an account to start budgeting</p>
+
+                    <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+                        Create an account to start budgeting
+                    </p>
                 </div>
-                <form className="flex flex-1 w-75 max-w-2xl flex-col gap-3" onSubmit={handleSubmit}>
+
+                <form
+                    className="flex flex-1 w-75 max-w-2xl flex-col gap-3"
+                    onSubmit={handleSubmit}
+                >
                     <input
                         type="text"
                         placeholder="Name"
@@ -65,6 +89,7 @@ export default function SignupPage() {
                         required
                         className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
                     />
+
                     <input
                         type="email"
                         placeholder="Email"
@@ -73,39 +98,53 @@ export default function SignupPage() {
                         required
                         className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
                     />
-                    <input
-    type="password"
-    placeholder="Password"
-    value={password}
-    onChange={(e) => setPassword(e.target.value)}
-    required
-    minLength={8}
-    className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
-/>
 
-<input
-    type="password"
-    placeholder="Confirm Password"
-    value={confirmPassword}
-    onChange={(e) => setConfirmPassword(e.target.value)}
-    required
-    minLength={8}
-    className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
-/>
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
+                    />
+
+                    <input
+                        type="password"
+                        placeholder="Confirm Password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
+                    />
+
                     <div>
-                        <input type="checkbox" required/>
+                        <input type="checkbox" required />
+
                         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                            I accept the {" "}
-                            <a href="/privacy-policy" className="text-[#65e2b9] hover:underline">
+                            I accept the{" "}
+                            <a
+                                href="/privacy-policy"
+                                className="text-[#65e2b9] hover:underline"
+                            >
                                 privacy policy
-                            </a>
-                            {" "} and the {" "}
-                            <a href="/terms-of-service" className="text-[#65e2b9] hover:underline">
+                            </a>{" "}
+                            and the{" "}
+                            <a
+                                href="/terms-of-service"
+                                className="text-[#65e2b9] hover:underline"
+                            >
                                 terms of service
                             </a>
                         </p>
                     </div>
-                    {error && <p className="text-sm text-red-500">{error}</p>}
+
+                    {error && (
+                        <p className="text-sm text-red-500">
+                            {error}
+                        </p>
+                    )}
 
                     <button
                         type="submit"
@@ -113,9 +152,13 @@ export default function SignupPage() {
                     >
                         Sign Up
                     </button>
+
                     <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                        Already have an account? {" "}
-                        <a href="/login" className="text-[#65e2b9] hover:underline">
+                        Already have an account?{" "}
+                        <a
+                            href="/login"
+                            className="text-[#65e2b9] hover:underline"
+                        >
                             Log in
                         </a>
                     </p>
