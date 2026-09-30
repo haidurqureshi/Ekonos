@@ -1,45 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { jwtVerify } from 'jose';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { fail, getUserId } from '@/api/authentic';
 
-interface BudgetBody {
-adjusted_budget?: unknown;
+export const fail = (error: string, status: number) =>
+    NextResponse.json({ success: false, error }, { status });
+
+export const AUTH_COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'lax' as const,
+    path: '/',
+    maxAge: 60 * 60 * 24 * 7,
+};
+
+// Throws if unset, so a misconfigured server is a 500, not a forgeable secret
+export function getJwtSecret(): Uint8Array {
+    const { env } = getCloudflareContext();
+    const secret =
+        (env as unknown as Record<string, string | undefined>).JWT_SECRET ??
+        process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET is not configured');
+    return new TextEncoder().encode(secret);
 }
 
-const MAX_BUDGET = 1_000_000_000;
-
-export async function POST(request: NextRequest) {
-try {
-const userId = await getUserId(request);
-if (!userId) return fail('Unauthorized', 401);
-
-    let body: BudgetBody;
+// Returns the user's public_id, or null if unauthenticated
+export async function getUserId(request: NextRequest): Promise<string | null> {
+    const token = request.cookies.get('token')?.value;
+    const secret = getJwtSecret();
+    if (!token) return null;
     try {
-        body = await request.json();
+        const { payload } = await jwtVerify(token, secret, { algorithms: ['HS256'] });
+        return typeof payload.sub === 'string' ? payload.sub : null;
     } catch {
-        return fail('Invalid JSON', 400);
+        return null;
     }
-
-    const budget = body.adjusted_budget;
-    if (
-        typeof budget !== 'number' ||
-        !Number.isFinite(budget) ||
-        budget < 0 ||
-        budget > MAX_BUDGET
-    ) {
-        return fail('Invalid budget', 400);
-    }
-
-    const { env } = getCloudflareContext();
-    const result = await env.Ekonos
-        .prepare('UPDATE users SET budget = ? WHERE public_id = ?')
-        .bind(budget, userId)
-        .run();
-
-    if (result.meta.changes === 0) return fail('User not found', 404);
-
-    return NextResponse.json({ success: true });
-} catch (err) {
-    console.error('Budget update error:', err);
-    return fail('Server error', 500);
 }
