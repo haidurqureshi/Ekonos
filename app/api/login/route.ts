@@ -21,6 +21,13 @@ const fail = (error: string, status: number) =>
 // Computed once per isolate, used to equalize timing when the email isn't found
 let dummyHash: Promise<string> | undefined;
 
+const { env } = getCloudflareContext();
+
+console.log('Runtime bindings:', {
+    hasJWT: !!env.JWT_SECRET,
+    hasD1: !!env.Ekonos,
+});
+
 export async function POST(request: NextRequest) {
     let body: LoginBody;
     try {
