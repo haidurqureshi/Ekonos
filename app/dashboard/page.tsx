@@ -62,8 +62,7 @@ try {
     redirect('/login');
 }
 
-    const { env } = getCloudflareContext();
-    const db = env.Ekonos;
+const db = env.Ekonos;
 
     const user = await db
         .prepare('SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ?')
