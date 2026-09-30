@@ -73,7 +73,7 @@ export default function SignupPage() {
                         required
                         className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
                     />
-                    <<input
+                    <input
     type="password"
     placeholder="Password"
     value={password}
