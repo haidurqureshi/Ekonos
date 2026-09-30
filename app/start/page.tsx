@@ -25,25 +25,27 @@ export default function SignupPage() {
         }
 
         fetch("/api/signup", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ name, email, password }),
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to create account");
-                }
-                return response.json();
-            })
-            .then(() => {
-                router.push("/edit-budget");
-            })
-            .catch((error) => {
-                setError(error.message);
-            });
-    };
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name, email, password }),
+})
+    .then(async (response) => {
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to create account");
+        }
+
+        return data;
+    })
+    .then(() => {
+        router.push("/edit-budget");
+    })
+    .catch((error) => {
+        setError(error instanceof Error ? error.message : "Failed to create account");
+    });
     return (
         <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
             <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-15 px-16 bg-white dark:bg-black sm:items-start">
@@ -71,20 +73,25 @@ export default function SignupPage() {
                         required
                         className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
                     />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
-                    />
-                    <input
-                        type="password"
-                        placeholder="Confirm Password"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
-                    />
+                    <<input
+    type="password"
+    placeholder="Password"
+    value={password}
+    onChange={(e) => setPassword(e.target.value)}
+    required
+    minLength={8}
+    className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
+/>
+
+<input
+    type="password"
+    placeholder="Confirm Password"
+    value={confirmPassword}
+    onChange={(e) => setConfirmPassword(e.target.value)}
+    required
+    minLength={8}
+    className="border border-gray-300 rounded-md py-2 px-4 focus:outline-none focus:ring-2 focus:ring-[#65e2b9] dark:bg-zinc-900 dark:border-zinc-700 dark:text-white dark:placeholder-zinc-500"
+/>
                     <div>
                         <input type="checkbox" required/>
                         <p className="text-sm text-zinc-600 dark:text-zinc-400">
