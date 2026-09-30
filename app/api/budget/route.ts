@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { fail, getUserId } from '@/lib/auth';
+import { fail, getUserId } from '@/api/authentic';
 
 interface BudgetBody {
     adjusted_budget?: unknown;
