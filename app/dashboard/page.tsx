@@ -24,7 +24,7 @@ interface UserRow {
 }
 
 interface TransactionRow {
-    amount: number;
+    amount_pence: number;
 }
 
 export default async function Dashboard() {
@@ -73,11 +73,20 @@ const db = env.Ekonos;
     const public_id = userId!;
 
     const transactionsResult = await db
-        .prepare('SELECT amount FROM transactions WHERE user_id = ? AND created_at >= date("now", "start of month")')
-        .bind(public_id)
-        .all<TransactionRow>();
+    .prepare(`
+        SELECT amount_pence
+        FROM transactions
+        WHERE user_id = ?
+          AND created_at >= date('now', 'start of month')
+    `)
+    .bind(public_id)
+    .all<TransactionRow>();
 
-    const total_spent = transactionsResult.results?.reduce((sum: number, t: TransactionRow) => sum + (t.amount || 0), 0) || 0;
+const total_spent =
+    (transactionsResult.results?.reduce(
+        (sum, t) => sum + (t.amount_pence || 0),
+        0
+    ) ?? 0) / 100;
     const budget = Math.floor((user?.budget ?? 0) * 100) / 100;
     const ethics = Math.round(user?.ethical_score ?? 0) || 100;
     const shopping_ethics = user?.shopping_ethics || 100;
