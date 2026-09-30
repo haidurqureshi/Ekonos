@@ -33,14 +33,34 @@ export default async function Dashboard() {
 
     if (!token) redirect('/');
 
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    let userId: string;
-    try {
-        const { payload } = await jwtVerify(token, secret);
-        userId = payload.id as string;
-    } catch {
+    const { env } = getCloudflareContext();
+
+const jwtSecret =
+    (env as unknown as Record<string, string | undefined>).JWT_SECRET ??
+    process.env.JWT_SECRET;
+
+if (!jwtSecret) {
+    console.error('JWT_SECRET is not configured');
+    redirect('/login');
+}
+
+const secret = new TextEncoder().encode(jwtSecret);
+
+let userId: string;
+
+try {
+    const { payload } = await jwtVerify(token, secret, {
+        algorithms: ['HS256'],
+    });
+
+    if (typeof payload.sub !== 'string') {
         redirect('/login');
     }
+
+    userId = payload.sub;
+} catch {
+    redirect('/login');
+}
 
     const { env } = getCloudflareContext();
     const db = env.Ekonos;
