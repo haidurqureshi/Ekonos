@@ -1,76 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { jwtVerify } from "jose";
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { jwtVerify } from 'jose';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 
-interface AddBody {
-    brand: string;
-    price: number;
-    category: string;
-    ethical_score: number;
-}
+const fail = (error: string, status: number) =>
+    NextResponse.json({ success: false, error }, { status });
+
+const MAX_BUDGET = 1_000_000_000;
 
 export async function POST(request: NextRequest) {
-    const body = await request.json() as AddBody;
-    const { brand, price, category, ethical_score } = body;
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
-    if (!token) redirect('/');
-
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    let userId: string;
-    try {
-        const { payload } = await jwtVerify(token, secret);
-        userId = payload.id as string;
-    } catch {
-        redirect('/login');
-    }
-
-    if (!brand || !price || !category || !ethical_score) {
-        return NextResponse.json({ success: false, error: 'Missing fields' }, { status: 400 });
-    }
-
     try {
         const { env } = getCloudflareContext();
-        const db = env.Ekonos;
 
-        // 1. Insert the transaction
-        const insertResult = await db
-            .prepare('INSERT INTO transactions (user_id, company_name, amount, category, ethical_score) VALUES (?, ?, ?, ?, ?)')
-            .bind(userId!, brand, price, category, ethical_score)
-            .run();
-
-        if (!insertResult.success) {
-            console.error('Insert failed:', insertResult);
-            return NextResponse.json({ success: false, error: 'Database error' }, { status: 500 });
+        const jwtSecret =
+            (env as unknown as Record<string, string | undefined>).JWT_SECRET ??
+            process.env.JWT_SECRET;
+        if (!jwtSecret) {
+            console.error('JWT_SECRET is not configured');
+            return fail('Server misconfigured', 500);
         }
 
-        // 2. Recalculate this user's per-category ethics averages.
-        // ethical_score is NOT set here — it's a GENERATED column derived
-        // automatically from these three, so writing to it directly errors.
-        const updateResult = await db
-            .prepare(
-                `UPDATE users
-                 SET
-                   shopping_ethics  = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Shopping'),
-                   transport_ethics = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Transport'),
-                   other_ethics     = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Other')
-                 WHERE public_id = ?`
-            )
-            .bind(userId!, userId!, userId!, userId!)
-            .run();
+        const token = request.cookies.get('token')?.value;
+        if (!token) return fail('Unauthorized', 401);
 
-        if (!updateResult.success) {
-            console.error('Update failed:', updateResult);
-            return NextResponse.json({ success: false, error: 'Failed to update ethics averages' }, { status: 500 });
+        let userId: string;
+        try {
+            const { payload } = await jwtVerify(
+                token,
+                new TextEncoder().encode(jwtSecret),
+                { algorithms: ['HS256'] }
+            );
+            if (typeof payload.sub !== 'string') return fail('Unauthorized', 401);
+            userId = payload.sub;
+        } catch {
+            return fail('Unauthorized', 401);
         }
 
-        return NextResponse.json({ success: true }, { status: 201 });
+        let body: { adjusted_budget?: unknown };
+        try {
+            body = await request.json();
+        } catch {
+            return fail('Invalid JSON', 400);
+        }
 
+        const budget = body.adjusted_budget;
+        if (
+            typeof budget !== 'number' ||
+            !Number.isFinite(budget) ||
+            budget < 0 ||
+            budget > MAX_BUDGET
+        ) {
+            return fail('Invalid budget', 400);
+        }
+
+        const result = await env.Ekonos
+            .prepare('UPDATE users SET budget = ? WHERE public_id = ?')
+            .bind(budget, userId)
+            .run();
+
+        if (result.meta.changes === 0) return fail('User not found', 404);
+
+        return NextResponse.json({ success: true });
     } catch (err) {
-        console.error(err);
-        return NextResponse.json({ success: false, error: 'Server error' }, { status: 500 });
+        console.error('Budget update error:', err);
+        return fail('Server error', 500);
     }
 }
