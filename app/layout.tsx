@@ -16,16 +16,25 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://ekonos.co.uk"),
   title: {
-    default: "Ekonos | Ethical personal finance",
+    default: "Ekonos | Free Ethical Budgeting App",
     template: "%s | Ekonos",
   },
   description:
-    "Ekonos is a free budgeting tool that helps you track your spending and see how it lines up with your values.",
+    "Ekonos is a free ethical budgeting app. Set a budget, log your spending and score each purchase to see how ethical your spending is.",
   applicationName: "Ekonos",
   openGraph: {
     type: "website",
     siteName: "Ekonos",
     locale: "en_GB",
+    title: "Ekonos | Free Ethical Budgeting App",
+    description:
+      "Set a budget, log your spending and score each purchase to see how ethical your spending is.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ekonos | Free Ethical Budgeting App",
+    description:
+      "Set a budget, log your spending and score each purchase to see how ethical your spending is.",
   },
 };
 
