@@ -8,18 +8,58 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Ekonos",
+  url: "https://ekonos.co.uk",
+  description:
+    "A free ethical budgeting app. Set a monthly budget, log your spending, and score each purchase so you can see how ethical your spending really is.",
+  applicationCategory: "FinanceApplication",
+  operatingSystem: "Any (web browser)",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "GBP" },
+  publisher: {
+    "@type": "Organization",
+    name: "HaidurQureshi Ltd",
+    url: "https://haidurqureshi.com",
+  },
+};
+
+const faqs = [
+  {
+    q: "What is Ekonos?",
+    a: "Ekonos is a free ethical budgeting app. You set a monthly budget, log your spending, and give each purchase an ethical score. Ekonos combines them into an overall score and a breakdown by category.",
+  },
+  {
+    q: "How does the ethical score work?",
+    a: "When you add a transaction, you rate how ethical that purchase was from 0 to 100. Ekonos averages your ratings into an overall ethical score, and into separate scores for shopping, transport and other spending.",
+  },
+  {
+    q: "Does Ekonos connect to my bank?",
+    a: "No. You enter your transactions yourself, so you stay in control of what information Ekonos holds.",
+  },
+  {
+    q: "Is Ekonos free?",
+    a: "Yes, Ekonos is currently free to use. If that ever changes, we will update our terms and tell users in advance.",
+  },
+  {
+    q: "Is Ekonos financial advice?",
+    a: "No. Ekonos is a budgeting tool, and nothing in it is financial, investment, tax or legal advice.",
+  },
+];
+
 const features = [
   {
-    title: "Track your spending",
-    text: "Record your income and transactions in one clear dashboard.",
+    title: "Set a monthly budget",
+    text: "See how much you have spent, how much is left, and whether you are on track for the month.",
   },
   {
-    title: "See your ethical score",
-    text: "Find out how your spending lines up with ethical and environmental considerations, company by company.",
+    title: "Score every purchase",
+    text: "Log what you buy and rate how ethical it was. Ekonos turns your ratings into an overall ethical score.",
   },
   {
-    title: "Stay in control",
-    text: "You enter your own data. Ekonos doesn’t connect to your bank accounts.",
+    title: "See where it comes from",
+    text: "Break your score down by category, such as shopping and transport, to spot where you can improve.",
   },
 ];
 
@@ -33,6 +73,12 @@ export default async function Home() {
 
   return (
     <div className="relative isolate flex flex-1 flex-col">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       {/* Soft brand glow */}
       <div
         aria-hidden="true"
@@ -115,10 +161,35 @@ export default async function Home() {
           ))}
         </ul>
 
+        {/* Common questions */}
+        <section className="mt-16 max-w-2xl sm:mt-20">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Common questions
+          </h2>
+          <dl className="mt-6 space-y-6">
+            {faqs.map((item) => (
+              <div key={item.q}>
+                <dt className="font-semibold tracking-tight">{item.q}</dt>
+                <dd className="mt-1 text-base leading-7 text-zinc-600 dark:text-zinc-400">
+                  {item.a}
+                </dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-8 text-base leading-7 text-zinc-600 dark:text-zinc-400">
+            New to budgeting with your values in mind? Read our{" "}
+            <Link
+              href="/guides/ethical-budgeting"
+              className="font-medium text-zinc-900 underline underline-offset-4 hover:text-zinc-600 dark:text-zinc-50 dark:hover:text-zinc-300"
+            >
+              guide to ethical budgeting
+            </Link>
+            .
+          </p>
+        </section>
+
         <p className="mt-10 max-w-2xl text-xs leading-5 text-zinc-500">
-          Ekonos is a budgeting tool and does not provide financial advice.
-          Ethical scores are our own assessment of publicly available
-          information and are a general guide only.
+          Ekonos is a budgeting tool and does not provide financial advice. Ethical scores reflect the ratings you enter and are a general guide only.
         </p>
       </main>
     </div>
