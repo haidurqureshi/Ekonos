@@ -37,7 +37,7 @@ const footerLinks = [
 ];
 
 const linkStyles =
-  "rounded-sm text-sm text-zinc-600 underline-offset-4 transition-colors hover:text-zinc-900 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 dark:text-zinc-400 dark:hover:text-zinc-50";
+  "rounded-sm text-sm text-zinc-600 underline-offset-4 transition-colors hover:text-zinc-900 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600 dark:focus-visible:outline-[#65e2b9] dark:text-zinc-400 dark:hover:text-zinc-50";
 
 export default function RootLayout({
   children,
@@ -49,7 +49,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-stone-50 font-sans text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
+      <body className="flex min-h-full flex-col bg-stone-50 font-sans text-zinc-900 selection:bg-[#65e2b9]/40 dark:bg-zinc-950 dark:text-zinc-50">
         {children}
 
         <footer className="border-t border-zinc-200 dark:border-zinc-800">
