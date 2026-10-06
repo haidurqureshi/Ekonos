@@ -46,9 +46,10 @@ export default function SignupPage() {
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data: { success?: boolean; error?: string } = await response
-        .json()
-        .catch(() => ({}));
+      const data = (await response.json().catch(() => ({}))) as {
+        success?: boolean;
+        error?: string;
+      };
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to create account");
