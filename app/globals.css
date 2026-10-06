@@ -1,13 +1,25 @@
 @import "tailwindcss";
 
+/* Browser autofill: keep inputs readable in both themes */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,
 input:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0px 1000px #18181b inset;
-  -webkit-text-fill-color: #ffffff;
-  caret-color: #ffffff;
-  border: 1px solid #3f3f46;
+  -webkit-box-shadow: 0 0 0px 1000px #ffffff inset;
+  -webkit-text-fill-color: #18181b;
+  caret-color: #18181b;
+  border: 1px solid #d4d4d8;
   transition: background-color 5000s ease-in-out 0s;
+}
+
+@media (prefers-color-scheme: dark) {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px #18181b inset;
+    -webkit-text-fill-color: #ffffff;
+    caret-color: #ffffff;
+    border: 1px solid #3f3f46;
+  }
 }
 
 @utility no-scrollbar {
