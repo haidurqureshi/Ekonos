@@ -1,275 +1,355 @@
+import type { Metadata } from "next";
 import Image from "next/image";
-
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
+// Account pages should never appear in search results.
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 async function logout() {
-    "use server"
-    const cookieStore = await cookies();
-    cookieStore.delete('token');
-    redirect('/login');
+  "use server";
+  const cookieStore = await cookies();
+  cookieStore.delete("token");
+  redirect("/login");
 }
 
 interface UserRow {
-    name: string;
-    public_id: string;
-    budget: number;
-    ethical_score: number;
-    shopping_ethics: number;
-    transport_ethics: number;
-    other_ethics: number;
+  name: string;
+  public_id: string;
+  budget: number;
+  ethical_score: number;
+  shopping_ethics: number;
+  transport_ethics: number;
+  other_ethics: number;
 }
 
 interface TransactionRow {
-    amount_pence: number;
+  amount_pence: number;
 }
 
+/* ---------- Presentation helpers ---------- */
+
+type Tone = "good" | "warn" | "bad";
+
+// Text colours use darker shades in light mode so they stay readable on white.
+const tones: Record<Tone, { text: string; bar: string; border: string }> = {
+  good: {
+    text: "text-emerald-600 dark:text-[#65e2b9]",
+    bar: "bg-emerald-500 dark:bg-[#65e2b9]",
+    border: "border-emerald-500 dark:border-[#65e2b9]",
+  },
+  warn: {
+    text: "text-amber-600 dark:text-amber-400",
+    bar: "bg-amber-500",
+    border: "border-amber-500",
+  },
+  bad: {
+    text: "text-red-600 dark:text-red-400",
+    bar: "bg-red-500",
+    border: "border-red-500",
+  },
+};
+
+const gbp = new Intl.NumberFormat("en-GB", {
+  style: "currency",
+  currency: "GBP",
+});
+
+const cardClass =
+  "rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900/60";
+
+const linkCardClass = `${cardClass} block transition-colors hover:border-zinc-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:hover:border-zinc-600 dark:focus-visible:outline-[#65e2b9]`;
+
+function Bar({
+  value,
+  tone,
+  label,
+}: {
+  value: number;
+  tone: Tone;
+  label: string;
+}) {
+  const pct = Math.max(0, Math.min(value, 100));
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={Math.round(pct)}
+      className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800"
+    >
+      <div
+        className={`h-full rounded-full ${tones[tone].bar}`}
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}
+
+const toneForCategory = (v: number): Tone =>
+  v > 70 ? "good" : v > 30 ? "warn" : "bad";
+
 export default async function Dashboard() {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
 
-    if (!token) redirect('/');
+  if (!token) redirect("/");
 
-    const { env } = getCloudflareContext();
+  const { env } = getCloudflareContext();
 
-const jwtSecret =
+  const jwtSecret =
     (env as unknown as Record<string, string | undefined>).JWT_SECRET ??
     process.env.JWT_SECRET;
 
-if (!jwtSecret) {
-    console.error('JWT_SECRET is not configured');
-    redirect('/login');
-}
+  if (!jwtSecret) {
+    console.error("JWT_SECRET is not configured");
+    redirect("/login");
+  }
 
-const secret = new TextEncoder().encode(jwtSecret);
+  const secret = new TextEncoder().encode(jwtSecret);
 
-let userId: string;
+  let userId: string;
 
-try {
+  try {
     const { payload } = await jwtVerify(token, secret, {
-        algorithms: ['HS256'],
+      algorithms: ["HS256"],
     });
 
-    if (typeof payload.sub !== 'string') {
-        redirect('/login');
+    if (typeof payload.sub !== "string") {
+      redirect("/login");
     }
 
     userId = payload.sub;
-} catch {
-    redirect('/login');
-}
+  } catch {
+    redirect("/login");
+  }
 
-const db = env.Ekonos;
+  const db = env.Ekonos;
 
-    const user = await db
-        .prepare('SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ?')
-        .bind(userId!)
-        .first<UserRow>();
+  const user = await db
+    .prepare(
+      "SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ?",
+    )
+    .bind(userId!)
+    .first<UserRow>();
 
-    const name = user?.name;
-    const public_id = userId!;
+  const name = user?.name;
+  const public_id = userId!;
 
-    const transactionsResult = await db
-    .prepare(`
+  const transactionsResult = await db
+    .prepare(
+      `
         SELECT amount_pence
         FROM transactions
         WHERE user_id = ?
           AND created_at >= date('now', 'start of month')
-    `)
+    `,
+    )
     .bind(public_id)
     .all<TransactionRow>();
 
-const total_spent =
+  const total_spent =
     (transactionsResult.results?.reduce(
-        (sum, t) => sum + (t.amount_pence || 0),
-        0
+      (sum, t) => sum + (t.amount_pence || 0),
+      0,
     ) ?? 0) / 100;
-    const budget = Math.floor((user?.budget ?? 0) * 100) / 100;
-    const ethics = Math.round(user?.ethical_score ?? 0) || 100;
-    const shopping_ethics = user?.shopping_ethics || 100;
-    const transport_ethics = user?.transport_ethics || 100;
-    const other_ethics = user?.other_ethics || 100;
+  const budget = Math.floor((user?.budget ?? 0) * 100) / 100;
+  const ethics = Math.round(user?.ethical_score ?? 0) || 100;
+  const shopping_ethics = user?.shopping_ethics || 100;
+  const transport_ethics = user?.transport_ethics || 100;
+  const other_ethics = user?.other_ethics || 100;
 
-    const d = new Date();
-    const day = d.getDate();
-    const days = new Date(d.getFullYear(), (d.getMonth()+1), 0).getDate();
-    // Placeholder for demonstration purposes not 0 will break!!!!
-    const percentage_spent =  budget ? (total_spent / budget) * 100 : 0;
+  const d = new Date();
+  const day = d.getDate();
+  const days = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  // Placeholder for demonstration purposes not 0 will break!!!!
+  const percentage_spent = budget ? (total_spent / budget) * 100 : 0;
 
+  const adjusted_percentage_spent = percentage_spent / (day / days);
+  const remaining_budget = Math.round((budget - total_spent) * 100) / 100;
 
+  // Same thresholds as before, expressed as tones.
+  const budgetTone: Tone =
+    adjusted_percentage_spent > 100
+      ? "bad"
+      : adjusted_percentage_spent > 75
+        ? "warn"
+        : "good";
+  const ethicsTone: Tone = ethics >= 75 ? "good" : ethics >= 38 ? "warn" : "bad";
 
-    const adjusted_percentage_spent = percentage_spent / (day / days);
-    const remaining_budget = Math.round(((budget - total_spent)*100))/100;
-    let budgetInfoColor = "text-[#65e2b9]";
-    let budgetInfoBgColor = "bg-[#65e2b9]";
-    if (adjusted_percentage_spent > 100) {
-        budgetInfoColor = "text-red-500";
-        budgetInfoBgColor = "bg-red-500";
-    } else if (adjusted_percentage_spent > 75) {
-        budgetInfoColor = "text-yellow-500";
-        budgetInfoBgColor = "bg-yellow-500";
-    } else if (adjusted_percentage_spent > 50) {
-        budgetInfoColor = "text-[#65e2b9]";
-        budgetInfoBgColor = "bg-[#65e2b9]";
-    }
+  const placeholder_text = "Generating Ethical Feedback...";
+  const daysLeft = days - day + 1;
 
-    let ethical_colour = "text-red-500";
-    let ethical_border_colour = "border-red-500";
-    if (ethics>=75){
-        ethical_colour= "text-[#65e2b9]";
-        ethical_border_colour = "border-[#65e2b9]";
-    } else if(ethics >=38){
-        ethical_colour="text-yellow-500";
-        ethical_border_colour = "border-yellow-500";
-    }
-    const placeholder_text= "Generating Ethical Feedback..."
-    let shopping_ethics_colour;
-    let transport_ethics_colour;
-    let other_ethics_colour;
+  const categories = [
+    { label: "Shopping", value: shopping_ethics },
+    { label: "Transport", value: transport_ethics },
+    { label: "Other", value: other_ethics },
+  ];
 
-    if(shopping_ethics>70){
-        shopping_ethics_colour = "bg-[#65e2b9]";
-    } else if(shopping_ethics>30){
-        shopping_ethics_colour = "bg-yellow-500";
-    } else{
-        shopping_ethics_colour = "bg-red-500";
-    }
-    transport_ethics_colour = "bg-red-500";
-    if(transport_ethics>70){
-        transport_ethics_colour = "bg-[#65e2b9]";
-    } else if(transport_ethics>30){
-        transport_ethics_colour = "bg-yellow-500";
-    } else{
-        transport_ethics_colour = "bg-red-500";
-    }
+  return (
+    <div className="relative isolate flex flex-1 flex-col">
+      {/* Soft brand glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[24rem] bg-[radial-gradient(60%_60%_at_50%_0%,rgba(101,226,185,0.18),transparent)] dark:bg-[radial-gradient(60%_60%_at_50%_0%,rgba(101,226,185,0.10),transparent)]"
+      />
 
-    if(other_ethics>70){
-        other_ethics_colour = "bg-[#65e2b9]";
-    } else if(other_ethics>30){
-        other_ethics_colour = "bg-yellow-500";
-    } else{
-        other_ethics_colour = "bg-red-500";
-    }
-    return (
-        <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black relative">
-            <div className="w-full max-w-3xl flex items-center justify-between py-4 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black">
-                <div className="flex items-center gap-2 sm:gap-4">
-                    <div className="relative group">
-                        {/* The button catches the focus when clicked */}
-                        <button aria-label="Open Menu" className="focus:outline-none">
-                            <Image
-                                src="/hamburger.svg"
-                                alt="hamburger menu"
-                                className="dark:invert"
-                                width={30}
-                                height={30}
-                                priority
-                            />
-                        </button>
-                        
-                        {/* CSS handles visibility using opacity and pointer-events */}
-                        <div className="absolute top-10 left-0 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-md p-4 flex flex-col gap-3 w-48 z-10 
-                                        opacity-0 pointer-events-none transition-opacity duration-150
-                                        group-focus-within:opacity-100 group-focus-within:pointer-events-auto">
-                            <form action={logout}>
-                                <button type="submit" className="text-sm text-zinc-700 dark:text-zinc-300 hover:text-[#65e2b9]">
-                                    Log out
-                                </button>
-                            </form>
-                            <a href="/add-item" className="text-sm text-zinc-700 dark:text-zinc-300 hover:text-[#65e2b9]">Add Payment</a>
-                        </div>
-                    </div>
+      {/* Top bar */}
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-5 py-6 sm:px-8 lg:px-12">
+        <Link
+          href="/dashboard"
+          aria-label="Ekonos dashboard"
+          className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600 dark:focus-visible:outline-[#65e2b9]"
+        >
+          <Image
+            src="/EKONOS.svg"
+            alt="Ekonos"
+            width={100}
+            height={100}
+            priority
+            className="h-10 w-auto sm:h-12"
+          />
+        </Link>
 
-                    <Image
-                        src="/EKONOS.svg"
-                        alt="EKONOS logo"
-                        width={50}
-                        height={50}
-                        priority
-                        className="w-10 h-10 sm:w-12.5 sm:h-12.5"
-                    />
-                </div>
-                <p className="text-base sm:text-1xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50 whitespace-nowrap">
-                    Welcome, {name}!
-                </p>
-            </div>
-            <main className="flex flex-1 w-full max-w-4xl flex-col items-center justify-between py-8 sm:py-15 px-4 sm:px-8 lg:px-16 bg-white dark:bg-black sm:items-start">
-                <div className="flex flex-col sm:flex-row gap-4 justify-between w-full cursor-default">
-                    <div id="budget-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a]" >
-                    <a href="/add-item">
-                        <div className="text-xs font-medium text-zinc-500">Spent This Month</div>
-                        <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{total_spent}</div>
-                        <div className="text-xs text-zinc-500">Out of £{budget}</div>
-                        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                            <div
-                                className={`h-full rounded-full ${budgetInfoBgColor}`}
-                                style={{ width: `${Math.min(percentage_spent, 100)}%` }}
-                            />
-                        </div>
-                        <div className="text-xs text-zinc-500">
-                            {Math.min(percentage_spent, 100).toFixed(0)}% of budget used
-                        </div>
-                    </a>
-                    </div>
-                    
-                    <div id="remaining-info" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200  rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
-                    <a href="/edit-budget">
-                        <div className="text-xs font-medium text-zinc-500">Remaining Budget</div>
-                        <div className={`text-2xl font-bold ${budgetInfoColor}`}>£{remaining_budget}</div>
-                        <div className="text-xs text-zinc-500">{days-day + 1} days left</div>
-                    </a>
-                    </div>
-                    <div id="ethical-score" className="flex-1 flex flex-col gap-1 p-4 border border-zinc-200  rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
-                    <a href="/ethical-breakdown">
-                        <div className="text-xs font-medium text-zinc-500">Ethical Score</div>
-                        <div className={`text-2xl font-bold ${ethical_colour}`}>{ethics}</div>
-                        <div className="text-xs text-zinc-500">out of 100</div>
-                    </a>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 w-full mt-4 cursor-default">
-                    <div id="ethical-breakdown" className="mt-4 w-full p-4 border border-zinc-200  rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] ">
-                        <p>Your Ethical Breakdown</p>
-                        <div className="flex gap-3 max-w-xl">
-                            <div className={`flex items-center justify-center w-14 h-14 rounded-full border-4 ${ethical_border_colour} text-base font-medium ${ethical_colour} shrink-0`}>{ethics}</div>
-                            <div>{placeholder_text}</div>
-                        </div>
-                        <div>
-                            <p>Shopping</p>
-                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                                <div
-                                className={`h-full rounded-full ${shopping_ethics_colour}`}
-                                style={{ width: `${Math.min(shopping_ethics, 100)}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                        <div>
-                            <p>Transport</p>
-                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                                <div
-                                className={`h-full rounded-full ${transport_ethics_colour}`}
-                                style={{ width: `${Math.min(transport_ethics, 100)}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                        <div>
-                            <p>Other</p>
-                            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                                <div
-                                className={`h-full rounded-full ${other_ethics_colour}`}
-                                style={{ width: `${Math.min(other_ethics, 100)}%` }}
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="transactions" className="mt-4 w-full p-4 border border-zinc-200 dark:border-zinc-700 rounded-lg bg-white dark:bg-zinc-900 hover:border-transparent hover:bg-black/4 dark:hover:bg-[#1a1a1a] ">
-                        <p>Past Transactions</p>
-                    </div>
-                </div>
-            </main> 
+        <div className="flex items-center gap-3 sm:gap-5">
+          <Link
+            href="/add-item"
+            className="inline-flex h-10 items-center justify-center rounded-full bg-[#65e2b9] px-5 text-sm font-medium text-zinc-900 transition-colors hover:bg-[#4fd3a8] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:focus-visible:outline-[#65e2b9]"
+          >
+            Add payment
+          </Link>
+          <form action={logout}>
+            <button
+              type="submit"
+              className="rounded-full text-sm font-medium text-zinc-600 underline-offset-4 transition-colors hover:text-zinc-900 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-600 dark:text-zinc-400 dark:hover:text-zinc-50 dark:focus-visible:outline-[#65e2b9]"
+            >
+              Log out
+            </button>
+          </form>
         </div>
-    );
+      </header>
+
+      <main className="mx-auto w-full max-w-5xl flex-1 px-5 pb-16 pt-4 sm:px-8 lg:px-12">
+        <h1 className="text-[clamp(1.75rem,3vw+1rem,2.5rem)] font-semibold leading-tight tracking-tight">
+          Welcome{name ? `, ${name}` : ""}
+        </h1>
+        <p className="mt-2 text-base text-zinc-600 dark:text-zinc-400">
+          Here’s how this month is going.
+        </p>
+
+        {/* Summary cards */}
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          <Link href="/add-item" className={linkCardClass}>
+            <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Spent this month
+            </div>
+            <div
+              className={`mt-2 text-3xl font-semibold tracking-tight ${tones[budgetTone].text}`}
+            >
+              {gbp.format(total_spent)}
+            </div>
+            <div className="mt-1 text-sm text-zinc-500">
+              Out of {gbp.format(budget)}
+            </div>
+            <div className="mt-4">
+              <Bar
+                value={percentage_spent}
+                tone={budgetTone}
+                label="Budget used"
+              />
+            </div>
+            <div className="mt-2 text-xs text-zinc-500">
+              {Math.min(percentage_spent, 100).toFixed(0)}% of budget used
+            </div>
+          </Link>
+
+          <Link href="/edit-budget" className={linkCardClass}>
+            <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Remaining budget
+            </div>
+            <div
+              className={`mt-2 text-3xl font-semibold tracking-tight ${tones[budgetTone].text}`}
+            >
+              {gbp.format(remaining_budget)}
+            </div>
+            <div className="mt-1 text-sm text-zinc-500">
+              {daysLeft} {daysLeft === 1 ? "day" : "days"} left
+            </div>
+            <div className="mt-4 text-xs text-zinc-500 underline underline-offset-4">
+              Edit budget
+            </div>
+          </Link>
+
+          <Link href="/ethical-breakdown" className={linkCardClass}>
+            <div className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Ethical score
+            </div>
+            <div
+              className={`mt-2 text-3xl font-semibold tracking-tight ${tones[ethicsTone].text}`}
+            >
+              {ethics}
+            </div>
+            <div className="mt-1 text-sm text-zinc-500">out of 100</div>
+          </Link>
+        </div>
+
+        {/* Detail cards */}
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <section className={cardClass} aria-labelledby="breakdown-heading">
+            <h2
+              id="breakdown-heading"
+              className="text-base font-semibold tracking-tight"
+            >
+              Your ethical breakdown
+            </h2>
+
+            <div className="mt-4 flex items-center gap-4">
+              <div
+                aria-label={`Overall ethical score ${ethics} out of 100`}
+                className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full border-4 text-lg font-semibold ${tones[ethicsTone].border} ${tones[ethicsTone].text}`}
+              >
+                {ethics}
+              </div>
+              <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                {placeholder_text}
+              </p>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {categories.map((c) => (
+                <div key={c.label}>
+                  <div className="mb-1.5 flex items-center justify-between text-sm">
+                    <span className="font-medium">{c.label}</span>
+                    <span className="text-zinc-500">{Math.round(c.value)}</span>
+                  </div>
+                  <Bar
+                    value={c.value}
+                    tone={toneForCategory(c.value)}
+                    label={`${c.label} ethical score`}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className={cardClass} aria-labelledby="transactions-heading">
+            <h2
+              id="transactions-heading"
+              className="text-base font-semibold tracking-tight"
+            >
+              Past transactions
+            </h2>
+            <p className="mt-4 text-sm text-zinc-500">Coming soon.</p>
+          </section>
+        </div>
+      </main>
+    </div>
+  );
 }
