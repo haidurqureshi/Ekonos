@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getUserId } from "../../../lib/auth";
-import { recalculateEthics } from "../../../lib/transactions";
+import { ethicsStatement } from "../../../lib/transactions";
 import { CATEGORIES } from "../../../lib/transaction-types";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -55,18 +55,20 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
     const { env } = getCloudflareContext();
     const db = env.Ekonos;
 
-    const result = await db
-      .prepare(
-        `UPDATE transactions
-         SET company_name = ?, amount_pence = ?, category = ?, ethical_score = ?
-         WHERE rowid = ? AND user_id = ?`,
-      )
-      .bind(brand, Math.round(price * 100), category, score, id, userId)
-      .run();
+    // The change and the score recalculation run together as one batch.
+    const [result] = await db.batch([
+      db
+        .prepare(
+          `UPDATE transactions
+           SET company_name = ?, amount_pence = ?, category = ?, ethical_score = ?
+           WHERE rowid = ? AND user_id = ?`,
+        )
+        .bind(brand, Math.round(price * 100), category, score, id, userId),
+      ethicsStatement(db, userId),
+    ]);
 
     if (!result.meta.changes) return fail("Transaction not found", 404);
 
-    await recalculateEthics(db, userId);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -86,14 +88,15 @@ export async function DELETE(_request: NextRequest, ctx: Ctx) {
     const { env } = getCloudflareContext();
     const db = env.Ekonos;
 
-    const result = await db
-      .prepare("DELETE FROM transactions WHERE rowid = ? AND user_id = ?")
-      .bind(id, userId)
-      .run();
+    const [result] = await db.batch([
+      db
+        .prepare("DELETE FROM transactions WHERE rowid = ? AND user_id = ?")
+        .bind(id, userId),
+      ethicsStatement(db, userId),
+    ]);
 
     if (!result.meta.changes) return fail("Transaction not found", 404);
 
-    await recalculateEthics(db, userId);
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error(err);

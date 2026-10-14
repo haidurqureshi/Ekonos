@@ -10,9 +10,11 @@ export const TX_COLUMNS =
 type Db = ReturnType<typeof getCloudflareContext>["env"]["Ekonos"];
 
 // Rebuilds the user's overall and per-category averages from their transactions.
-// Run after any edit or delete so the dashboard stays correct.
-export async function recalculateEthics(db: Db, userId: string) {
-  await db
+// Run it after every add, edit or delete so the dashboard stays correct.
+// ethicsStatement() returns the prepared statement so it can run in the same
+// db.batch() as the change itself (both succeed or neither does).
+export function ethicsStatement(db: Db, userId: string) {
+  return db
     .prepare(
       `UPDATE users
        SET
@@ -22,6 +24,9 @@ export async function recalculateEthics(db: Db, userId: string) {
          other_ethics     = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Other')
        WHERE public_id = ?`,
     )
-    .bind(userId, userId, userId, userId, userId)
-    .run();
+    .bind(userId, userId, userId, userId, userId);
+}
+
+export async function recalculateEthics(db: Db, userId: string) {
+  await ethicsStatement(db, userId).run();
 }

@@ -37,7 +37,7 @@ interface TransactionRow {
 
 /* ---------- Presentation helpers ---------- */
 
-type Tone = "good" | "warn" | "bad";
+type Tone = "good" | "warn" | "bad" | "neutral";
 
 // Text colours use darker shades in light mode so they stay readable on white.
 const tones: Record<Tone, { text: string; bar: string; border: string }> = {
@@ -55,6 +55,12 @@ const tones: Record<Tone, { text: string; bar: string; border: string }> = {
     text: "text-red-600 dark:text-red-400",
     bar: "bg-red-500",
     border: "border-red-500",
+  },
+  // Used when there is no data yet, so nothing looks good or bad.
+  neutral: {
+    text: "text-zinc-400 dark:text-zinc-500",
+    bar: "bg-zinc-300 dark:bg-zinc-700",
+    border: "border-zinc-300 dark:border-zinc-700",
   },
 };
 
@@ -95,8 +101,8 @@ function Bar({
   );
 }
 
-const toneForCategory = (v: number): Tone =>
-  v > 70 ? "good" : v > 30 ? "warn" : "bad";
+const toneForCategory = (v: number | null): Tone =>
+  v === null ? "neutral" : v > 70 ? "good" : v > 30 ? "warn" : "bad";
 
 export default async function Dashboard() {
   const cookieStore = await cookies();
@@ -169,16 +175,40 @@ export default async function Dashboard() {
     .all<TransactionItem>();
   const recent = recentResult.results ?? [];
 
+  // How many scored transactions each category has. A score only means
+  // something once there is at least one, so this decides "no data yet".
+  const countsResult = await db
+    .prepare(
+      `SELECT category, COUNT(*) AS n
+       FROM transactions
+       WHERE user_id = ?
+       GROUP BY category`,
+    )
+    .bind(public_id)
+    .all<{ category: string; n: number }>();
+  const countFor = (category: string) =>
+    (countsResult.results ?? []).find((r) => r.category === category)?.n ?? 0;
+  const totalCount = (countsResult.results ?? []).reduce(
+    (sum, r) => sum + r.n,
+    0,
+  );
+
   const total_spent =
     (transactionsResult.results?.reduce(
       (sum, t) => sum + (t.amount_pence || 0),
       0,
     ) ?? 0) / 100;
   const budget = Math.floor((user?.budget ?? 0) * 100) / 100;
-  const ethics = Math.round(user?.ethical_score ?? 0) || 100;
-  const shopping_ethics = user?.shopping_ethics || 100;
-  const transport_ethics = user?.transport_ethics || 100;
-  const other_ethics = user?.other_ethics || 100;
+  // null = no scored purchases yet. A genuine score of 0 is kept as 0.
+  const ethics: number | null =
+    totalCount > 0 && user?.ethical_score != null
+      ? Math.round(user.ethical_score)
+      : null;
+  const categoryScore = (category: string, value: number | null | undefined) =>
+    countFor(category) > 0 && value != null ? value : null;
+  const shopping_ethics = categoryScore("Shopping", user?.shopping_ethics);
+  const transport_ethics = categoryScore("Transport", user?.transport_ethics);
+  const other_ethics = categoryScore("Other", user?.other_ethics);
 
   const d = new Date();
   const day = d.getDate();
@@ -196,7 +226,14 @@ export default async function Dashboard() {
       : adjusted_percentage_spent > 75
         ? "warn"
         : "good";
-  const ethicsTone: Tone = ethics >= 75 ? "good" : ethics >= 38 ? "warn" : "bad";
+  const ethicsTone: Tone =
+    ethics === null
+      ? "neutral"
+      : ethics >= 75
+        ? "good"
+        : ethics >= 38
+          ? "warn"
+          : "bad";
 
   const placeholder_text = "Generating Ethical Feedback...";
   const daysLeft = days - day + 1;
@@ -308,9 +345,11 @@ export default async function Dashboard() {
             <div
               className={`mt-2 text-3xl font-semibold tracking-tight ${tones[ethicsTone].text}`}
             >
-              {ethics}
+              {ethics ?? "–"}
             </div>
-            <div className="mt-1 text-sm text-zinc-500">out of 100</div>
+            <div className="mt-1 text-sm text-zinc-500">
+              {ethics === null ? "Add a payment to get your score" : "out of 100"}
+            </div>
           </Link>
         </div>
 
@@ -326,13 +365,19 @@ export default async function Dashboard() {
 
             <div className="mt-4 flex items-center gap-4">
               <div
-                aria-label={`Overall ethical score ${ethics} out of 100`}
+                aria-label={
+                  ethics === null
+                    ? "No ethical score yet"
+                    : `Overall ethical score ${ethics} out of 100`
+                }
                 className={`flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-full border-4 text-lg font-semibold ${tones[ethicsTone].border} ${tones[ethicsTone].text}`}
               >
-                {ethics}
+                {ethics ?? "–"}
               </div>
               <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                {placeholder_text}
+                {ethics === null
+                  ? "Your score appears once you’ve added a payment."
+                  : placeholder_text}
               </p>
             </div>
 
@@ -341,10 +386,12 @@ export default async function Dashboard() {
                 <div key={c.label}>
                   <div className="mb-1.5 flex items-center justify-between text-sm">
                     <span className="font-medium">{c.label}</span>
-                    <span className="text-zinc-500">{Math.round(c.value)}</span>
+                    <span className="text-zinc-500">
+                      {c.value === null ? "No data yet" : Math.round(c.value)}
+                    </span>
                   </div>
                   <Bar
-                    value={c.value}
+                    value={c.value ?? 0}
                     tone={toneForCategory(c.value)}
                     label={`${c.label} ethical score`}
                   />
