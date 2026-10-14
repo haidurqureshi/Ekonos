@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { TX_COLUMNS } from "../lib/transactions";
+import type { TransactionItem } from "../lib/transaction-types";
 
 // Account pages should never appear in search results.
 export const metadata: Metadata = {
@@ -154,6 +156,18 @@ export default async function Dashboard() {
     )
     .bind(public_id)
     .all<TransactionRow>();
+
+  const recentResult = await db
+    .prepare(
+      `SELECT ${TX_COLUMNS}
+       FROM transactions
+       WHERE user_id = ?
+       ORDER BY created_at DESC, rowid DESC
+       LIMIT 5`,
+    )
+    .bind(public_id)
+    .all<TransactionItem>();
+  const recent = recentResult.results ?? [];
 
   const total_spent =
     (transactionsResult.results?.reduce(
@@ -340,13 +354,43 @@ export default async function Dashboard() {
           </section>
 
           <section className={cardClass} aria-labelledby="transactions-heading">
-            <h2
-              id="transactions-heading"
-              className="text-base font-semibold tracking-tight"
-            >
-              Past transactions
-            </h2>
-            <p className="mt-4 text-sm text-zinc-500">Coming soon.</p>
+            <div className="flex items-center justify-between gap-4">
+              <h2
+                id="transactions-heading"
+                className="text-base font-semibold tracking-tight"
+              >
+                Past transactions
+              </h2>
+              <Link
+                href="/transactions"
+                className="text-sm font-medium text-zinc-600 underline underline-offset-4 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+              >
+                View all
+              </Link>
+            </div>
+
+            {recent.length === 0 ? (
+              <p className="mt-4 text-sm text-zinc-500">
+                Nothing logged yet. Add a payment to see it here.
+              </p>
+            ) : (
+              <ul className="mt-4 divide-y divide-zinc-200 dark:divide-zinc-800">
+                {recent.map((t) => (
+                  <li
+                    key={t.id}
+                    className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{t.brand}</p>
+                      <p className="text-xs text-zinc-500">{t.category}</p>
+                    </div>
+                    <p className="flex-shrink-0 text-sm font-semibold">
+                      {gbp.format(t.amount_pence / 100)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
         </div>
       </main>

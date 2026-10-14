@@ -16,7 +16,7 @@ const steps = [
   },
   {
     title: "Note who you spend with, not just how much",
-    text: "Most budgets group spending into categories such as groceries or transport. For ethical budgeting, also record the company behind each purchase. This is the step that turns a normal budget into an ethical one.",
+    text: "Most budgets group spending into categories such as shopping or transport. For ethical budgeting, also record the brand behind each purchase and how well it fits your values. This is the step that turns a normal budget into an ethical one.",
   },
   {
     title: "Decide what matters to you",
@@ -24,7 +24,7 @@ const steps = [
   },
   {
     title: "Look at where the money goes",
-    text: "Sort your spending by company and see which ones take the largest share. Your biggest, most regular outgoings, such as energy, your bank, your phone provider and your weekly shop, usually matter far more than occasional purchases.",
+    text: "Sort your spending by brand and category and see which take the largest share. Your biggest, most regular outgoings, such as energy, your bank, your phone provider and your weekly shop, usually matter far more than occasional purchases.",
   },
   {
     title: "Change what is realistic",
@@ -122,15 +122,16 @@ export default function EthicalBudgetingGuide() {
             </h2>
             <p className="leading-7 text-zinc-700 dark:text-zinc-300">
               Ekonos is a free budgeting app built around exactly this idea.
-              You record your income and spending, tag each transaction with
-              the company, and Ekonos shows an ethical score reflecting how
-              your spending lines up with ethical and environmental
-              considerations. You enter your own data, and Ekonos doesn’t
-              connect to your bank accounts.
+              You set a monthly budget and log each purchase with its brand,
+              price and category, then rate how ethical it was from 0 to 100.
+              Ekonos turns those ratings into an overall ethical score and a
+              breakdown by category, alongside how much of your budget you
+              have used.
             </p>
             <p className="leading-7 text-zinc-700 dark:text-zinc-300">
-              Ethical scores are our own assessment of publicly available
-              information and are a general guide only.
+              You enter your own data, and Ekonos doesn’t connect to your bank
+              accounts. Ethical scores reflect your own ratings and are a
+              general guide only.
             </p>
             <div className="pt-3">
               <Link
