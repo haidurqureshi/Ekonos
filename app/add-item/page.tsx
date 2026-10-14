@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { searchBrands, type BrandSuggestion } from "./brands";
 
 const labelClass = "mb-1.5 block text-sm font-medium";
 
@@ -19,6 +20,37 @@ export default function AddTransactionPage() {
   const [ethicalScore, setEthicalScore] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+
+  const suggestions = open ? searchBrands(brand) : [];
+  const showList = suggestions.length > 0;
+
+  const selectBrand = (b: BrandSuggestion) => {
+    setBrand(b.name);
+    // Only fill the category if the user hasn't chosen one yet.
+    if (!category) setCategory(b.category);
+    setOpen(false);
+    setActive(-1);
+  };
+
+  const onBrandKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showList) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((i) => (i + 1) % suggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+    } else if (e.key === "Enter" && active >= 0) {
+      e.preventDefault();
+      selectBrand(suggestions[active]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setActive(-1);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,14 +159,68 @@ export default function AddTransactionPage() {
               <label htmlFor="brand" className={labelClass}>
                 Brand
               </label>
-              <input
-                id="brand"
-                type="text"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                required
-                className={inputClass}
-              />
+              <div className="relative">
+                <input
+                  id="brand"
+                  type="text"
+                  role="combobox"
+                  aria-expanded={showList}
+                  aria-controls="brand-listbox"
+                  aria-autocomplete="list"
+                  aria-activedescendant={
+                    active >= 0 ? `brand-option-${active}` : undefined
+                  }
+                  autoComplete="off"
+                  value={brand}
+                  onChange={(e) => {
+                    setBrand(e.target.value);
+                    setOpen(true);
+                    setActive(-1);
+                  }}
+                  onFocus={() => setOpen(true)}
+                  onBlur={() => {
+                    setOpen(false);
+                    setActive(-1);
+                  }}
+                  onKeyDown={onBrandKeyDown}
+                  required
+                  className={inputClass}
+                />
+                {showList && (
+                  <ul
+                    id="brand-listbox"
+                    role="listbox"
+                    aria-label="Brand suggestions"
+                    className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
+                  >
+                    {suggestions.map((s, i) => (
+                      <li
+                        key={s.name}
+                        id={`brand-option-${i}`}
+                        role="option"
+                        aria-selected={i === active}
+                        onMouseDown={(e) => {
+                          // Keep focus in the input so blur doesn't close the list first.
+                          e.preventDefault();
+                          selectBrand(s);
+                        }}
+                        onMouseEnter={() => setActive(i)}
+                        className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-2.5 text-base ${
+                          i === active ? "bg-zinc-100 dark:bg-zinc-800" : ""
+                        }`}
+                      >
+                        <span>{s.name}</span>
+                        <span className="text-xs text-zinc-500">
+                          {s.category}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <p className="mt-1.5 text-xs text-zinc-500">
+                Pick a suggestion or type any brand.
+              </p>
             </div>
 
             <div>
