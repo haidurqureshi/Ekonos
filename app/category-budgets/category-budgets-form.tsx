@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CATEGORIES } from "../lib/transaction-types";
+import { CATEGORIES, CATEGORY_HINTS } from "../lib/transaction-types";
 
 const labelClass = "mb-1.5 block text-sm font-medium";
 
@@ -14,12 +14,6 @@ const gbp = new Intl.NumberFormat("en-GB", {
   style: "currency",
   currency: "GBP",
 });
-
-const hints: Record<string, string> = {
-  Shopping: "Groceries, clothes, household and online shopping",
-  Transport: "Fuel, public transport, taxis and travel",
-  Other: "Eating out, bills, subscriptions and everything else",
-};
 
 export function CategoryBudgetsForm({
   initial,
@@ -114,7 +108,7 @@ export function CategoryBudgetsForm({
             />
           </div>
           <p id={`hint-${c}`} className="mt-1.5 text-xs text-zinc-500">
-            {hints[c]}
+            {CATEGORY_HINTS[c]}
           </p>
         </div>
       ))}

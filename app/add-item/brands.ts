@@ -1,4 +1,6 @@
-export type BrandCategory = "Transport" | "Shopping" | "Other";
+import type { Category } from "../lib/transaction-types";
+
+export type BrandCategory = Category;
 
 export type BrandSuggestion = {
   name: string;
@@ -9,16 +11,16 @@ export type BrandSuggestion = {
 // Later you can replace searchBrands() with a call to a places/business API
 // without touching the page.
 const brands: BrandSuggestion[] = [
-  // Shopping (supermarkets, retail)
-  { name: "Tesco", category: "Shopping" },
-  { name: "Sainsbury's", category: "Shopping" },
-  { name: "Asda", category: "Shopping" },
-  { name: "Morrisons", category: "Shopping" },
-  { name: "Aldi", category: "Shopping" },
-  { name: "Lidl", category: "Shopping" },
-  { name: "Waitrose", category: "Shopping" },
-  { name: "Co-op", category: "Shopping" },
-  { name: "Iceland", category: "Shopping" },
+  // Food and shopping
+  { name: "Tesco", category: "Food & drink" },
+  { name: "Sainsbury's", category: "Food & drink" },
+  { name: "Asda", category: "Food & drink" },
+  { name: "Morrisons", category: "Food & drink" },
+  { name: "Aldi", category: "Food & drink" },
+  { name: "Lidl", category: "Food & drink" },
+  { name: "Waitrose", category: "Food & drink" },
+  { name: "Co-op", category: "Food & drink" },
+  { name: "Iceland", category: "Food & drink" },
   { name: "Marks & Spencer", category: "Shopping" },
   { name: "Amazon", category: "Shopping" },
   { name: "Argos", category: "Shopping" },
@@ -52,26 +54,26 @@ const brands: BrandSuggestion[] = [
   { name: "Ryanair", category: "Transport" },
   { name: "British Airways", category: "Transport" },
 
-  // Other (food and drink out, bills, subscriptions)
-  { name: "Greggs", category: "Other" },
-  { name: "Costa", category: "Other" },
-  { name: "Starbucks", category: "Other" },
-  { name: "Pret A Manger", category: "Other" },
-  { name: "McDonald's", category: "Other" },
-  { name: "KFC", category: "Other" },
-  { name: "Nando's", category: "Other" },
-  { name: "Netflix", category: "Other" },
-  { name: "Spotify", category: "Other" },
-  { name: "Disney+", category: "Other" },
-  { name: "Octopus Energy", category: "Other" },
-  { name: "British Gas", category: "Other" },
-  { name: "EDF", category: "Other" },
-  { name: "OVO Energy", category: "Other" },
-  { name: "BT", category: "Other" },
-  { name: "Virgin Media", category: "Other" },
-  { name: "Vodafone", category: "Other" },
-  { name: "EE", category: "Other" },
-  { name: "O2", category: "Other" },
+  // Other
+  { name: "Greggs", category: "Food & drink" },
+  { name: "Costa", category: "Food & drink" },
+  { name: "Starbucks", category: "Food & drink" },
+  { name: "Pret A Manger", category: "Food & drink" },
+  { name: "McDonald's", category: "Food & drink" },
+  { name: "KFC", category: "Food & drink" },
+  { name: "Nando's", category: "Food & drink" },
+  { name: "Netflix", category: "Leisure & subscriptions" },
+  { name: "Spotify", category: "Leisure & subscriptions" },
+  { name: "Disney+", category: "Leisure & subscriptions" },
+  { name: "Octopus Energy", category: "Bills & housing" },
+  { name: "British Gas", category: "Bills & housing" },
+  { name: "EDF", category: "Bills & housing" },
+  { name: "OVO Energy", category: "Bills & housing" },
+  { name: "BT", category: "Bills & housing" },
+  { name: "Virgin Media", category: "Bills & housing" },
+  { name: "Vodafone", category: "Bills & housing" },
+  { name: "EE", category: "Bills & housing" },
+  { name: "O2", category: "Bills & housing" },
 ];
 
 // Names that start with the query come first, then names that contain it.

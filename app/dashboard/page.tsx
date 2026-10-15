@@ -26,9 +26,6 @@ interface UserRow {
   public_id: string;
   budget: number;
   ethical_score: number;
-  shopping_ethics: number;
-  transport_ethics: number;
-  other_ethics: number;
 }
 
 interface TransactionRow {
@@ -143,7 +140,7 @@ export default async function Dashboard() {
 
   const user = await db
     .prepare(
-      "SELECT name, public_id, budget, ethical_score, shopping_ethics, transport_ethics, other_ethics FROM users WHERE public_id = ?",
+      "SELECT name, public_id, budget, ethical_score FROM users WHERE public_id = ?",
     )
     .bind(userId!)
     .first<UserRow>();
@@ -179,15 +176,18 @@ export default async function Dashboard() {
   // something once there is at least one, so this decides "no data yet".
   const countsResult = await db
     .prepare(
-      `SELECT category, COUNT(*) AS n
+      `SELECT category, COUNT(*) AS n, AVG(ethical_score) AS avg_score
        FROM transactions
        WHERE user_id = ?
        GROUP BY category`,
     )
     .bind(public_id)
-    .all<{ category: string; n: number }>();
+    .all<{ category: string; n: number; avg_score: number | null }>();
   const countFor = (category: string) =>
     (countsResult.results ?? []).find((r) => r.category === category)?.n ?? 0;
+  const avgFor = (category: string) =>
+    (countsResult.results ?? []).find((r) => r.category === category)
+      ?.avg_score ?? null;
   const totalCount = (countsResult.results ?? []).reduce(
     (sum, r) => sum + r.n,
     0,
@@ -245,11 +245,6 @@ export default async function Dashboard() {
     totalCount > 0 && user?.ethical_score != null
       ? Math.round(user.ethical_score)
       : null;
-  const categoryScore = (category: string, value: number | null | undefined) =>
-    countFor(category) > 0 && value != null ? value : null;
-  const shopping_ethics = categoryScore("Shopping", user?.shopping_ethics);
-  const transport_ethics = categoryScore("Transport", user?.transport_ethics);
-  const other_ethics = categoryScore("Other", user?.other_ethics);
 
   const d = new Date();
   const day = d.getDate();
@@ -279,11 +274,17 @@ export default async function Dashboard() {
   const placeholder_text = "Generating Ethical Feedback...";
   const daysLeft = days - day + 1;
 
-  const categories = [
-    { label: "Shopping", value: shopping_ethics },
-    { label: "Transport", value: transport_ethics },
-    { label: "Other", value: other_ethics },
-  ];
+  // Only categories that have transactions, busiest first. The top few are
+  // shown; the rest sit behind a "Show more" toggle so phones stay uncluttered.
+  const scoredCategories = CATEGORIES.map((label) => ({
+    label,
+    count: countFor(label),
+    value: avgFor(label),
+  }))
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.count - a.count);
+  const visibleCategories = scoredCategories.slice(0, 4);
+  const moreCategories = scoredCategories.slice(4);
 
   return (
     <div className="relative isolate flex flex-1 flex-col">
@@ -481,7 +482,12 @@ export default async function Dashboard() {
             </div>
 
             <div className="mt-6 space-y-4">
-              {categories.map((c) => (
+              {scoredCategories.length === 0 && (
+                <p className="text-sm text-zinc-500">
+                  Category scores appear once you’ve added a payment.
+                </p>
+              )}
+              {visibleCategories.map((c) => (
                 <div key={c.label}>
                   <div className="mb-1.5 flex items-center justify-between text-sm">
                     <span className="font-medium">{c.label}</span>
@@ -496,6 +502,33 @@ export default async function Dashboard() {
                   />
                 </div>
               ))}
+
+              {moreCategories.length > 0 && (
+                <details className="group">
+                  <summary className="cursor-pointer text-sm font-medium text-zinc-600 underline-offset-4 hover:underline dark:text-zinc-400">
+                    Show {moreCategories.length} more
+                  </summary>
+                  <div className="mt-4 space-y-4">
+                    {moreCategories.map((c) => (
+                      <div key={c.label}>
+                        <div className="mb-1.5 flex items-center justify-between text-sm">
+                          <span className="font-medium">{c.label}</span>
+                          <span className="text-zinc-500">
+                            {c.value === null
+                              ? "No data yet"
+                              : Math.round(c.value)}
+                          </span>
+                        </div>
+                        <Bar
+                          value={c.value ?? 0}
+                          tone={toneForCategory(c.value)}
+                          label={`${c.label} ethical score`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
             </div>
           </section>
 

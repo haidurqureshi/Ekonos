@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { searchBrands, type BrandSuggestion } from "./brands";
+import { CATEGORIES } from "../lib/transaction-types";
 
 const labelClass = "mb-1.5 block text-sm font-medium";
 
@@ -262,9 +263,11 @@ export default function AddTransactionPage() {
                 <option value="" disabled>
                   Select category
                 </option>
-                <option value="Transport">Transport</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Other">Other</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
               </select>
             </div>
 

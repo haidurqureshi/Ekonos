@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: "How does the ethical score work?",
-    a: "When you add a transaction, you rate how ethical that purchase was from 0 to 100. Ekonos averages your ratings into an overall ethical score, and into separate scores for shopping, transport and other spending.",
+    a: "When you add a transaction, you rate how ethical that purchase was from 0 to 100. Ekonos averages your ratings into an overall ethical score, and into a separate score for each spending category, such as food, transport and shopping.",
   },
   {
     q: "Does Ekonos connect to my bank?",
