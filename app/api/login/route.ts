@@ -1,86 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { SignJWT } from 'jose';
-import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { SESSION_COOKIE, signToken } from "../../lib/auth";
 
-interface LoginBody {
-    email?: string;
-    password?: string;
+function fail(error: string, status: number) {
+  return NextResponse.json({ success: false, error }, { status });
 }
-
-interface UserRow {
-    id: number;
-    email: string;
-    password_hash: string;
-    public_id: string;
-}
-
-const fail = (error: string, status: number) =>
-    NextResponse.json({ success: false, error }, { status });
-
-// Computed once per isolate, used to equalize timing when the email isn't found
-let dummyHash: Promise<string> | undefined;
-
-
 
 export async function POST(request: NextRequest) {
-    let body: LoginBody;
-    try {
-        body = await request.json();
-    } catch {
-        return fail('Invalid JSON', 400);
+  const body = (await request.json().catch(() => null)) as {
+    email?: unknown;
+    password?: unknown;
+  } | null;
+
+  const email =
+    typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  const password = typeof body?.password === "string" ? body.password : "";
+
+  if (!email || !password) return fail("Missing fields", 400);
+
+  try {
+    const { env } = getCloudflareContext();
+
+    const user = await env.Ekonos.prepare(
+      "SELECT public_id, email, password_hash FROM users WHERE email = ?",
+    )
+      .bind(email)
+      .first<{ public_id: string; email: string; password_hash: string }>();
+
+    // Same message whether the email or the password is wrong.
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return fail("Invalid credentials", 401);
     }
 
-    const email = body.email?.trim().toLowerCase();
-    const password = body.password;
-
-    if (!email || !password) return fail('Missing fields', 400);
-    if (email.length > 254 || password.length > 128) return fail('Invalid credentials', 401);
-
-    let user: UserRow | null;
-    let jwtSecret: string | undefined;
-    try {
-        const { env } = getCloudflareContext();
-        jwtSecret = (env as unknown as Record<string, string | undefined>).JWT_SECRET
-            ?? process.env.JWT_SECRET;
-
-        user = await env.Ekonos
-            .prepare('SELECT id, email, password_hash, public_id FROM users WHERE email = ?')
-            .bind(email)
-            .first<UserRow>();
-    } catch (err) {
-        console.error('Login DB error:', err);
-        return fail('Database error', 500);
-    }
-
-    if (!jwtSecret) {
-        console.error('JWT_SECRET is not configured');
-        return fail('Server misconfigured', 500);
-    }
-
-    if (!user) {
-        dummyHash ??= bcrypt.hash('dummy-password', 10);
-        await bcrypt.compare(password, await dummyHash);
-        return fail('Invalid credentials', 401);
-    }
-
-    const passwordMatches = await bcrypt.compare(password, user.password_hash);
-    if (!passwordMatches) return fail('Invalid credentials', 401);
-
-    const token = await new SignJWT({ email: user.email })
-        .setProtectedHeader({ alg: 'HS256' })
-        .setSubject(user.public_id)
-        .setIssuedAt()
-        .setExpirationTime('7d')
-        .sign(new TextEncoder().encode(jwtSecret));
-
+    const token = await signToken(user.public_id, user.email);
     const response = NextResponse.json({ success: true });
-    response.cookies.set('token', token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 7,
-    });
+    response.cookies.set(SESSION_COOKIE.name, token, SESSION_COOKIE.options);
     return response;
+  } catch (err) {
+    console.error(err);
+    return fail("Server error", 500);
+  }
 }

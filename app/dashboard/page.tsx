@@ -3,8 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { jwtVerify } from "jose";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getUserId } from "../lib/auth";
+import { londonToday, monthRange } from "../lib/dates";
 import { TX_COLUMNS } from "../lib/transactions";
 import { CATEGORIES, type TransactionItem } from "../lib/transaction-types";
 
@@ -23,13 +24,7 @@ async function logout() {
 
 interface UserRow {
   name: string;
-  public_id: string;
-  budget: number;
-  ethical_score: number;
-}
-
-interface TransactionRow {
-  amount_pence: number;
+  budget_pence: number;
 }
 
 /* ---------- Presentation helpers ---------- */
@@ -102,96 +97,83 @@ const toneForCategory = (v: number | null): Tone =>
   v === null ? "neutral" : v > 70 ? "good" : v > 30 ? "warn" : "bad";
 
 export default async function Dashboard() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) redirect("/");
+  const userId = await getUserId();
+  if (!userId) redirect("/login");
 
   const { env } = getCloudflareContext();
-
-  const jwtSecret =
-    (env as unknown as Record<string, string | undefined>).JWT_SECRET ??
-    process.env.JWT_SECRET;
-
-  if (!jwtSecret) {
-    console.error("JWT_SECRET is not configured");
-    redirect("/login");
-  }
-
-  const secret = new TextEncoder().encode(jwtSecret);
-
-  let userId: string;
-
-  try {
-    const { payload } = await jwtVerify(token, secret, {
-      algorithms: ["HS256"],
-    });
-
-    if (typeof payload.sub !== "string") {
-      redirect("/login");
-    }
-
-    userId = payload.sub;
-  } catch {
-    redirect("/login");
-  }
-
   const db = env.Ekonos;
 
   const user = await db
-    .prepare(
-      "SELECT name, public_id, budget, ethical_score FROM users WHERE public_id = ?",
-    )
-    .bind(userId!)
+    .prepare("SELECT name, budget_pence FROM users WHERE public_id = ?")
+    .bind(userId)
     .first<UserRow>();
 
-  const name = user?.name;
-  const public_id = userId!;
+  // A valid login for an account that no longer exists (for example after the
+  // database was reset). Clear the cookie instead of bouncing between pages.
+  if (!user) redirect("/api/logout");
 
-  const transactionsResult = await db
+  const name = user.name;
+
+  // "This month" is based on UK time.
+  const today = londonToday();
+  const { start, end } = monthRange(today.year, today.month);
+  const day = today.day;
+  const days = today.daysInMonth;
+
+  // This month's spending per category.
+  const spentResult = await db
     .prepare(
-      `
-        SELECT amount_pence
-        FROM transactions
-        WHERE user_id = ?
-          AND created_at >= date('now', 'start of month')
-    `,
+      `SELECT category, SUM(amount_pence) AS spent
+       FROM transactions
+       WHERE user_id = ? AND kind = 'expense'
+         AND occurred_on >= ? AND occurred_on < ?
+       GROUP BY category`,
     )
-    .bind(public_id)
-    .all<TransactionRow>();
+    .bind(userId, start, end)
+    .all<{ category: string; spent: number }>();
+  const spentRows = spentResult.results ?? [];
+  const spentFor = (category: string) =>
+    spentRows.find((r) => r.category === category)?.spent ?? 0;
+  const total_spent = spentRows.reduce((sum, r) => sum + (r.spent || 0), 0) / 100;
 
+  // Latest five transactions.
   const recentResult = await db
     .prepare(
       `SELECT ${TX_COLUMNS}
        FROM transactions
-       WHERE user_id = ?
-       ORDER BY created_at DESC, rowid DESC
+       WHERE user_id = ? AND kind = 'expense'
+       ORDER BY occurred_on DESC, id DESC
        LIMIT 5`,
     )
-    .bind(public_id)
+    .bind(userId)
     .all<TransactionItem>();
   const recent = recentResult.results ?? [];
 
-  // How many scored transactions each category has. A score only means
-  // something once there is at least one, so this decides "no data yet".
-  const countsResult = await db
+  // Ethical scores are worked out from the transactions themselves. Only scored
+  // transactions count, so "not scored yet" is never mistaken for a real 0.
+  const scoresResult = await db
     .prepare(
-      `SELECT category, COUNT(*) AS n, AVG(ethical_score) AS avg_score
+      `SELECT category, COUNT(ethical_score) AS n, AVG(ethical_score) AS avg_score
        FROM transactions
-       WHERE user_id = ?
+       WHERE user_id = ? AND kind = 'expense'
        GROUP BY category`,
     )
-    .bind(public_id)
+    .bind(userId)
     .all<{ category: string; n: number; avg_score: number | null }>();
+  const scoreRows = scoresResult.results ?? [];
   const countFor = (category: string) =>
-    (countsResult.results ?? []).find((r) => r.category === category)?.n ?? 0;
+    scoreRows.find((r) => r.category === category)?.n ?? 0;
   const avgFor = (category: string) =>
-    (countsResult.results ?? []).find((r) => r.category === category)
-      ?.avg_score ?? null;
-  const totalCount = (countsResult.results ?? []).reduce(
-    (sum, r) => sum + r.n,
+    scoreRows.find((r) => r.category === category)?.avg_score ?? null;
+
+  const scoredCount = scoreRows.reduce((sum, r) => sum + r.n, 0);
+  const scoreTotal = scoreRows.reduce(
+    (sum, r) => sum + (r.avg_score ?? 0) * r.n,
     0,
   );
+  // null = no scored purchases yet. A genuine score of 0 stays 0.
+  const ethics: number | null =
+    scoredCount > 0 ? Math.round(scoreTotal / scoredCount) : null;
 
   // Category limits. If the table hasn't been created yet, skip the section
   // rather than breaking the whole dashboard.
@@ -201,26 +183,12 @@ export default async function Dashboard() {
       .prepare(
         "SELECT category, amount_pence FROM category_budgets WHERE user_id = ?",
       )
-      .bind(public_id)
+      .bind(userId)
       .all<{ category: string; amount_pence: number }>();
     limits = limitsResult.results ?? [];
   } catch {
     limits = [];
   }
-
-  // This month's spending per category (same month boundary as the totals above).
-  const spentResult = await db
-    .prepare(
-      `SELECT category, SUM(amount_pence) AS spent
-       FROM transactions
-       WHERE user_id = ?
-         AND created_at >= date('now', 'start of month')
-       GROUP BY category`,
-    )
-    .bind(public_id)
-    .all<{ category: string; spent: number }>();
-  const spentFor = (category: string) =>
-    (spentResult.results ?? []).find((r) => r.category === category)?.spent ?? 0;
 
   const categoryLimits = CATEGORIES.map((category) => ({
     category,
@@ -234,24 +202,9 @@ export default async function Dashboard() {
       return { ...c, spent, pct, tone };
     });
 
-  const total_spent =
-    (transactionsResult.results?.reduce(
-      (sum, t) => sum + (t.amount_pence || 0),
-      0,
-    ) ?? 0) / 100;
-  const budget = Math.floor((user?.budget ?? 0) * 100) / 100;
-  // null = no scored purchases yet. A genuine score of 0 is kept as 0.
-  const ethics: number | null =
-    totalCount > 0 && user?.ethical_score != null
-      ? Math.round(user.ethical_score)
-      : null;
+  const budget = (user.budget_pence ?? 0) / 100;
 
-  const d = new Date();
-  const day = d.getDate();
-  const days = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-  // Placeholder for demonstration purposes not 0 will break!!!!
   const percentage_spent = budget ? (total_spent / budget) * 100 : 0;
-
   const adjusted_percentage_spent = percentage_spent / (day / days);
   const remaining_budget = Math.round((budget - total_spent) * 100) / 100;
 
@@ -274,8 +227,8 @@ export default async function Dashboard() {
   const placeholder_text = "Generating Ethical Feedback...";
   const daysLeft = days - day + 1;
 
-  // Only categories that have transactions, busiest first. The top few are
-  // shown; the rest sit behind a "Show more" toggle so phones stay uncluttered.
+  // Only categories that have scored transactions, busiest first. The top few
+  // are shown; the rest sit behind a "Show more" toggle so phones stay tidy.
   const scoredCategories = CATEGORIES.map((label) => ({
     label,
     count: countFor(label),

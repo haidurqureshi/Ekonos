@@ -22,8 +22,8 @@ export default async function TransactionsPage() {
   const { results } = await env.Ekonos.prepare(
     `SELECT ${TX_COLUMNS}
      FROM transactions
-     WHERE user_id = ?
-     ORDER BY created_at DESC, rowid DESC
+     WHERE user_id = ? AND kind = 'expense'
+     ORDER BY occurred_on DESC, id DESC
      LIMIT 200`,
   )
     .bind(userId)

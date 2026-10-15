@@ -21,21 +21,19 @@ const focusRing =
 const smallButton = `rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${focusRing}`;
 
 // Same thresholds as the dashboard's overall score.
-function scoreClass(score: number) {
+function scoreClass(score: number | null) {
+  if (score === null) return "text-zinc-500";
   if (score >= 75) return "text-emerald-600 dark:text-[#65e2b9]";
   if (score >= 38) return "text-amber-600 dark:text-amber-400";
   return "text-red-600 dark:text-red-400";
 }
 
-// created_at is stored in UTC by SQLite ("YYYY-MM-DD HH:MM:SS").
+// occurred_on is a plain calendar date (YYYY-MM-DD) in UK time.
 function formatDate(value: string | null) {
   if (!value) return "";
-  const d = new Date(value.includes("T") ? value : `${value.replace(" ", "T")}Z`);
+  const d = new Date(`${value}T12:00:00`);
   if (Number.isNaN(d.getTime())) return "";
-  return new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeZone: "Europe/London",
-  }).format(d);
+  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(d);
 }
 
 type EditForm = {
@@ -78,7 +76,7 @@ export function TransactionList({ initial }: { initial: TransactionItem[] }) {
       brand: t.brand,
       price: (t.amount_pence / 100).toFixed(2),
       category: t.category,
-      score: String(Math.round(t.ethical_score)),
+      score: t.ethical_score === null ? "" : String(Math.round(t.ethical_score)),
     });
   };
 
@@ -368,12 +366,14 @@ export function TransactionList({ initial }: { initial: TransactionItem[] }) {
                       <div className="min-w-0">
                         <p className="truncate font-medium">{t.brand}</p>
                         <p className="mt-1 text-sm text-zinc-500">
-                          {[formatDate(t.created_at), t.category]
+                          {[formatDate(t.occurred_on), t.category]
                             .filter(Boolean)
                             .join(" · ")}
                           {" · "}
                           <span className={scoreClass(t.ethical_score)}>
-                            Score {Math.round(t.ethical_score)}
+                            {t.ethical_score === null
+                              ? "Not scored"
+                              : `Score ${Math.round(t.ethical_score)}`}
                           </span>
                         </p>
                       </div>

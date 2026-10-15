@@ -1,7 +1,8 @@
 // Safe to import from both server and client code (no server-only imports here).
 
 // The categories users can choose. "Shopping", "Transport" and "Other" are the
-// original three, so existing transactions stay valid.
+// original three. Categories are checked here in code, not in the database,
+// so adding one never needs a migration.
 export const CATEGORIES = [
   "Bills & housing",
   "Food & drink",
@@ -28,6 +29,6 @@ export type TransactionItem = {
   brand: string;
   amount_pence: number;
   category: string;
-  ethical_score: number;
-  created_at: string | null;
+  ethical_score: number | null; // null = not scored yet
+  occurred_on: string; // YYYY-MM-DD
 };

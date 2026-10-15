@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { getUserId } from "../../../lib/auth";
-import { ethicsStatement } from "../../../lib/transactions";
 import { CATEGORIES } from "../../../lib/transaction-types";
 
 type Ctx = { params: Promise<{ id: string }> };
@@ -37,7 +36,7 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
   const category = body.category;
 
   if (!brand || brand.length > 100) return fail("Please enter a brand", 400);
-  if (!Number.isFinite(price) || price < 0) {
+  if (!Number.isFinite(price) || price < 0 || price > 10_000_000) {
     return fail("Please enter a valid price", 400);
   }
   if (
@@ -53,19 +52,14 @@ export async function PATCH(request: NextRequest, ctx: Ctx) {
 
   try {
     const { env } = getCloudflareContext();
-    const db = env.Ekonos;
 
-    // The change and the score recalculation run together as one batch.
-    const [result] = await db.batch([
-      db
-        .prepare(
-          `UPDATE transactions
-           SET company_name = ?, amount_pence = ?, category = ?, ethical_score = ?
-           WHERE rowid = ? AND user_id = ?`,
-        )
-        .bind(brand, Math.round(price * 100), category, score, id, userId),
-      ethicsStatement(db, userId),
-    ]);
+    const result = await env.Ekonos.prepare(
+      `UPDATE transactions
+       SET brand = ?, amount_pence = ?, category = ?, ethical_score = ?
+       WHERE id = ? AND user_id = ?`,
+    )
+      .bind(brand, Math.round(price * 100), category, Math.round(score), id, userId)
+      .run();
 
     if (!result.meta.changes) return fail("Transaction not found", 404);
 
@@ -86,14 +80,12 @@ export async function DELETE(_request: NextRequest, ctx: Ctx) {
 
   try {
     const { env } = getCloudflareContext();
-    const db = env.Ekonos;
 
-    const [result] = await db.batch([
-      db
-        .prepare("DELETE FROM transactions WHERE rowid = ? AND user_id = ?")
-        .bind(id, userId),
-      ethicsStatement(db, userId),
-    ]);
+    const result = await env.Ekonos.prepare(
+      "DELETE FROM transactions WHERE id = ? AND user_id = ?",
+    )
+      .bind(id, userId)
+      .run();
 
     if (!result.meta.changes) return fail("Transaction not found", 404);
 

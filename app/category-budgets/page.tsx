@@ -36,10 +36,10 @@ export default async function CategoryBudgetsPage() {
   }
 
   const user = await db
-    .prepare("SELECT budget FROM users WHERE public_id = ?")
+    .prepare("SELECT budget_pence FROM users WHERE public_id = ?")
     .bind(userId)
-    .first<{ budget: number }>();
-  const overallBudget = Math.floor((user?.budget ?? 0) * 100) / 100;
+    .first<{ budget_pence: number }>();
+  const overallBudget = (user?.budget_pence ?? 0) / 100;
 
   return (
     <div className="relative isolate flex flex-1 flex-col">
