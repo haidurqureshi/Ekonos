@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { TX_COLUMNS } from "../lib/transactions";
-import type { TransactionItem } from "../lib/transaction-types";
+import { CATEGORIES, type TransactionItem } from "../lib/transaction-types";
 
 // Account pages should never appear in search results.
 export const metadata: Metadata = {
@@ -193,6 +193,47 @@ export default async function Dashboard() {
     0,
   );
 
+  // Category limits. If the table hasn't been created yet, skip the section
+  // rather than breaking the whole dashboard.
+  let limits: { category: string; amount_pence: number }[] = [];
+  try {
+    const limitsResult = await db
+      .prepare(
+        "SELECT category, amount_pence FROM category_budgets WHERE user_id = ?",
+      )
+      .bind(public_id)
+      .all<{ category: string; amount_pence: number }>();
+    limits = limitsResult.results ?? [];
+  } catch {
+    limits = [];
+  }
+
+  // This month's spending per category (same month boundary as the totals above).
+  const spentResult = await db
+    .prepare(
+      `SELECT category, SUM(amount_pence) AS spent
+       FROM transactions
+       WHERE user_id = ?
+         AND created_at >= date('now', 'start of month')
+       GROUP BY category`,
+    )
+    .bind(public_id)
+    .all<{ category: string; spent: number }>();
+  const spentFor = (category: string) =>
+    (spentResult.results ?? []).find((r) => r.category === category)?.spent ?? 0;
+
+  const categoryLimits = CATEGORIES.map((category) => ({
+    category,
+    limit: limits.find((l) => l.category === category)?.amount_pence ?? 0,
+  }))
+    .filter((c) => c.limit > 0)
+    .map((c) => {
+      const spent = spentFor(c.category);
+      const pct = (spent / c.limit) * 100;
+      const tone: Tone = pct >= 100 ? "bad" : pct >= 80 ? "warn" : "good";
+      return { ...c, spent, pct, tone };
+    });
+
   const total_spent =
     (transactionsResult.results?.reduce(
       (sum, t) => sum + (t.amount_pence || 0),
@@ -352,6 +393,64 @@ export default async function Dashboard() {
             </div>
           </Link>
         </div>
+
+        {/* Category budgets */}
+        <section
+          className={`${cardClass} mt-4`}
+          aria-labelledby="category-budgets-heading"
+        >
+          <div className="flex items-center justify-between gap-4">
+            <h2
+              id="category-budgets-heading"
+              className="text-base font-semibold tracking-tight"
+            >
+              Category budgets
+            </h2>
+            <Link
+              href="/category-budgets"
+              className="text-sm font-medium text-zinc-600 underline underline-offset-4 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              {categoryLimits.length === 0 ? "Set limits" : "Edit limits"}
+            </Link>
+          </div>
+
+          {categoryLimits.length === 0 ? (
+            <p className="mt-4 text-sm text-zinc-500">
+              Set a monthly limit for shopping, transport and other spending to
+              see how each one is going.
+            </p>
+          ) : (
+            <ul className="mt-5 grid gap-6 sm:grid-cols-3">
+              {categoryLimits.map((c) => {
+                const left = c.limit - c.spent;
+                return (
+                  <li key={c.category}>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="text-sm font-medium">{c.category}</span>
+                      <span className="text-xs text-zinc-500">
+                        {gbp.format(c.spent / 100)} of {gbp.format(c.limit / 100)}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <Bar
+                        value={c.pct}
+                        tone={c.tone}
+                        label={`${c.category} budget used`}
+                      />
+                    </div>
+                    <p className={`mt-2 text-sm ${tones[c.tone].text}`}>
+                      {left < 0
+                        ? `Over by ${gbp.format(-left / 100)}`
+                        : c.pct >= 80
+                          ? `Close to your limit: ${gbp.format(left / 100)} left`
+                          : `${gbp.format(left / 100)} left`}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
 
         {/* Detail cards */}
         <div className="mt-4 grid gap-4 md:grid-cols-2">

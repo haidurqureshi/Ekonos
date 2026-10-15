@@ -8,6 +8,7 @@ const PROTECTED = [
   "/edit-budget",
   "/ethical-breakdown",
   "/transactions",
+  "/category-budgets",
 ];
 
 // Pages a logged-in user has no reason to see.
@@ -78,6 +79,7 @@ export const config = {
     "/edit-budget/:path*",
     "/ethical-breakdown/:path*",
     "/transactions/:path*",
+    "/category-budgets/:path*",
     "/login",
     "/start",
   ],

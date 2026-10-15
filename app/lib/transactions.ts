@@ -13,15 +13,18 @@ type Db = ReturnType<typeof getCloudflareContext>["env"]["Ekonos"];
 // Run it after every add, edit or delete so the dashboard stays correct.
 // ethicsStatement() returns the prepared statement so it can run in the same
 // db.batch() as the change itself (both succeed or neither does).
+// Categories with no transactions are stored as 100, which also keeps this safe if
+// those columns are NOT NULL. The dashboard decides "no data yet" by counting
+// transactions, not by reading these values.
 export function ethicsStatement(db: Db, userId: string) {
   return db
     .prepare(
       `UPDATE users
        SET
-         ethical_score    = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ?),
-         shopping_ethics  = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Shopping'),
-         transport_ethics = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Transport'),
-         other_ethics     = (SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Other')
+         ethical_score    = COALESCE((SELECT AVG(ethical_score) FROM transactions WHERE user_id = ?), 100),
+         shopping_ethics  = COALESCE((SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Shopping'), 100),
+         transport_ethics = COALESCE((SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Transport'), 100),
+         other_ethics     = COALESCE((SELECT AVG(ethical_score) FROM transactions WHERE user_id = ? AND category = 'Other'), 100)
        WHERE public_id = ?`,
     )
     .bind(userId, userId, userId, userId, userId);
